@@ -72,13 +72,13 @@ export const AdminCommandPaletteModal: React.FC<AdminCommandPaletteModalProps> =
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-10 sm:pt-20 px-3 sm:px-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
       <div
-        className="w-full max-w-xl bg-white dark:bg-[#0f172a] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150"
+        className="w-full max-w-xl bg-white dark:bg-[#0f172a] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150 max-h-[85dvh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search Input Bar */}
-        <div className="flex items-center px-4 py-3.5 border-b border-slate-100 dark:border-slate-800">
+        <div className="flex items-center px-4 py-3.5 border-b border-slate-100 dark:border-slate-800 shrink-0">
           <Search className="w-5 h-5 text-slate-400 mr-3 shrink-0" />
           <input
             ref={inputRef}
@@ -91,14 +91,14 @@ export const AdminCommandPaletteModal: React.FC<AdminCommandPaletteModalProps> =
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Results List */}
-        <div className="max-h-80 overflow-y-auto p-2 space-y-1">
+        <div className="max-h-[55dvh] sm:max-h-80 overflow-y-auto p-2 space-y-1 flex-1 overscroll-contain">
           {filteredLinks.length === 0 ? (
             <div className="py-8 text-center text-xs text-slate-400 dark:text-slate-500">
               No matching commands or pages found.

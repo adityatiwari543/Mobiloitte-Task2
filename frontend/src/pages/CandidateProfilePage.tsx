@@ -968,7 +968,7 @@ export const CandidateProfilePage: React.FC = () => {
         {/* ========================================================================= */}
         {/* SECTION 3: KEY PROFILE METRICS (ACTIONABLE) */}
         {/* ========================================================================= */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-4 gap-4">
           
           {/* Card 1: Profile Strength */}
           <button

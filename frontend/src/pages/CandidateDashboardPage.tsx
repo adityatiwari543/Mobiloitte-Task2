@@ -405,7 +405,7 @@ export const CandidateDashboardPage: React.FC = () => {
           </div>
 
           {/* Interactive Readiness Checklist Badges */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 min-[440px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {readinessItems.map((item) => (
               <div
                 key={item.id}

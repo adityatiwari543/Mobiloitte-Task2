@@ -314,7 +314,7 @@ export const JobsPage: React.FC = () => {
                 setRemoteType(e.target.value);
                 setPage(1);
               }}
-              className="rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-[#111827] px-3 py-1.5 text-slate-700 dark:text-[#CBD5E1] font-medium cursor-pointer"
+              className="grow sm:grow-0 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-[#111827] px-3 py-2 sm:py-1.5 text-slate-700 dark:text-[#CBD5E1] font-medium cursor-pointer"
             >
               <option value="">Work Mode: All</option>
               <option value={REMOTE_TYPES.ONSITE}>On-site</option>
@@ -329,7 +329,7 @@ export const JobsPage: React.FC = () => {
                 setEmploymentType(e.target.value);
                 setPage(1);
               }}
-              className="rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-[#111827] px-3 py-1.5 text-slate-700 dark:text-[#CBD5E1] font-medium cursor-pointer"
+              className="grow sm:grow-0 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-[#111827] px-3 py-2 sm:py-1.5 text-slate-700 dark:text-[#CBD5E1] font-medium cursor-pointer"
             >
               <option value="">Type: All</option>
               <option value={EMPLOYMENT_TYPES.FULL_TIME}>Full-Time</option>

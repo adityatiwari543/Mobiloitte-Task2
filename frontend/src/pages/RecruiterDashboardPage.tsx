@@ -514,7 +514,7 @@ Based on your open roles (${jobs.slice(0, 2).map((j: any) => j.title).join(', ')
             </button>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
+          <div className="grid grid-cols-1 min-[420px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
             {/* Stage 1: Applied */}
             <div
               onClick={() => openApplicantsWithFilter('applied')}

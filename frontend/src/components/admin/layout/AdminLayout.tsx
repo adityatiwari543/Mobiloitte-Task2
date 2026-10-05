@@ -48,7 +48,7 @@ export const AdminLayout: React.FC = () => {
   }, [location.pathname, totalApplications]);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-[#070b16] text-slate-900 dark:text-slate-100 transition-colors">
+    <div className="flex h-screen h-[100dvh] overflow-hidden bg-slate-50 dark:bg-[#070b16] text-slate-900 dark:text-slate-100 transition-colors">
       {/* Dedicated Desktop & Mobile Admin Sidebar */}
       <AdminSidebar
         mobileOpen={mobileSidebarOpen}
@@ -65,7 +65,7 @@ export const AdminLayout: React.FC = () => {
         />
 
         {/* Content Viewport */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-3.5 sm:p-6 lg:p-8 overscroll-contain">
           <Outlet />
         </main>
       </div>

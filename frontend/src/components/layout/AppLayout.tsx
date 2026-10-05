@@ -10,11 +10,11 @@ export const AppLayout: React.FC = () => {
   return (
     <div
       className={`flex flex-col ${
-        isAIAssistant ? 'h-screen overflow-hidden' : 'min-h-screen'
+        isAIAssistant ? 'h-screen h-[100dvh] overflow-hidden' : 'min-h-screen min-h-[100dvh]'
       } bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200`}
     >
       <Navbar />
-      <main className={`flex-grow ${isAIAssistant ? 'h-[calc(100vh-64px)] overflow-hidden' : ''}`}>
+      <main className={`flex-grow ${isAIAssistant ? 'h-[calc(100dvh-64px)] overflow-hidden' : ''}`}>
         <Outlet />
       </main>
       {!isAIAssistant && <Footer />}
