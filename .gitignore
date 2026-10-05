@@ -69,3 +69,7 @@ lerna-debug.log*
 tmp/
 temp/
 .turbo
+
+# Audit reports and internal metrics
+AUDIT/
+
