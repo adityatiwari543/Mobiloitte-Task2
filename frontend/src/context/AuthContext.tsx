@@ -37,9 +37,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       typeof window !== 'undefined' ? sessionStorage.getItem('jobconnect_session_active') : null;
 
     if (!isSessionActive) {
-      try {
-        await api.post('/auth/logout');
-      } catch {}
       setUser(null);
       setProfile(null);
       disconnectSocket();

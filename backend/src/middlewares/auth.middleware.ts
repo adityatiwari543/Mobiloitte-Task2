@@ -62,6 +62,33 @@ export async function authenticateToken(
   next();
 }
 
+export async function optionalAuthenticate(
+  req: Request,
+  _res: Response,
+  next: NextFunction
+): Promise<void> {
+  let token: string | undefined = req.cookies?.[ACCESS_COOKIE_NAME];
+  if (!token && req.headers.authorization?.startsWith('Bearer ')) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+  if (!token) {
+    return next();
+  }
+  const decoded = verifyAccessToken(token);
+  if (!decoded) {
+    return next();
+  }
+  try {
+    const isRevoked = await redisService.exists(`revoked:session:${decoded.sessionId}`);
+    if (!isRevoked) {
+      req.user = decoded;
+    }
+  } catch {
+    req.user = decoded;
+  }
+  next();
+}
+
 export function authorizeRoles(...allowedRoles: UserRole[]) {
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.user) {

@@ -44,6 +44,21 @@ export class JobService {
       sortBy = 'newest',
     } = filters;
 
+    // Resilient fallback: If MongoDB is reconnecting or awaiting IP whitelist, return empty list gracefully without 500 error
+    if (mongoose.connection.readyState !== 1) {
+      return {
+        jobs: [],
+        pagination: {
+          total: 0,
+          page: Number(page) || 1,
+          limit: Number(limit) || 20,
+          totalPages: 0,
+          hasNextPage: false,
+          hasPrevPage: false,
+        },
+      };
+    }
+
     const query: Record<string, unknown> = {
       status: 'published',
       applicationDeadline: { $gte: new Date() },

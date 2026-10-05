@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { AuthController } from '../controllers/auth.controller.js';
-import { authenticateToken } from '../middlewares/auth.middleware.js';
+import { authenticateToken, optionalAuthenticate } from '../middlewares/auth.middleware.js';
 import { authRateLimiter, otpRateLimiter } from '../middlewares/rateLimiter.middleware.js';
 import { validateBody } from '../middlewares/validate.middleware.js';
 import { avatarUpload, validateUploadMagicBytes } from '../utils/upload.js';
@@ -44,7 +44,7 @@ router.post(
 );
 
 // Protected authenticated routes
-router.post('/logout', authenticateToken, AuthController.logout);
+router.post('/logout', optionalAuthenticate, AuthController.logout);
 router.get('/me', authenticateToken, AuthController.me);
 router.post(
   '/change-password',

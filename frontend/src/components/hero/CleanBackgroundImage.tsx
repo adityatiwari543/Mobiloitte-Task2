@@ -53,7 +53,7 @@ export const CleanBackgroundImage: React.FC<CleanBackgroundImageProps> = ({
           <img
             src={heroCleanLight}
             alt="Professional candidate working on a laptop"
-            fetchPriority="high"
+            {...({ fetchpriority: 'high' } as any)}
             loading="eager"
             decoding="async"
             className="w-full h-full object-cover object-[center_25%] transition-all duration-300 dark:brightness-[0.88] dark:contrast-[1.05]"
