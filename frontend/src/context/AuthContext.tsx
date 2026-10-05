@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { api } from '../lib/api.js';
+import { api, setSessionActive } from '../lib/api.js';
 import { connectSocket, disconnectSocket } from '../lib/socket.js';
 import { IUser, RegisterInput, LoginInput } from '@jobconnect/shared';
 
@@ -18,18 +18,23 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Security rule: Auth tokens are managed strictly via HttpOnly secure cookies.
-// localStorage must only ever store user preferences like 'theme'.
+// localStorage must only ever store user preferences like 'theme'. sessionStorage is kept 100% empty.
 const enforceThemeOnlyLocalStorage = () => {
   try {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      const keysToRemove: string[] = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key !== 'theme') {
-          keysToRemove.push(key);
-        }
+    if (typeof window !== 'undefined') {
+      if (window.sessionStorage) {
+        sessionStorage.clear();
       }
-      keysToRemove.forEach((k) => localStorage.removeItem(k));
+      if (window.localStorage) {
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key !== 'theme') {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach((k) => localStorage.removeItem(k));
+      }
     }
   } catch {}
 };
@@ -43,32 +48,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const refreshUser = async () => {
-    // If the browser/system was closed and reopened, ensure session starts fresh
-    const isSessionActive =
-      typeof window !== 'undefined' ? sessionStorage.getItem('jobconnect_session_active') : null;
-
-    if (!isSessionActive) {
-      setUser(null);
-      setProfile(null);
-      disconnectSocket();
-      setIsLoading(false);
-      return;
-    }
-
+    enforceThemeOnlyLocalStorage();
     try {
       const response = await api.get('/auth/me');
       if (response.data.success) {
         setUser(response.data.data.user);
         setProfile(response.data.data.profile);
+        setSessionActive(true);
         connectSocket();
       } else {
         setUser(null);
         setProfile(null);
+        setSessionActive(false);
         disconnectSocket();
       }
     } catch {
       setUser(null);
       setProfile(null);
+      setSessionActive(false);
       disconnectSocket();
     } finally {
       setIsLoading(false);
@@ -84,9 +81,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     enforceThemeOnlyLocalStorage();
     const res = await api.post('/auth/login', credentials);
     if (res.data.success && !res.data.data.pendingVerification) {
-      if (typeof window !== 'undefined') {
-        sessionStorage.setItem('jobconnect_session_active', 'true');
-      }
+      setSessionActive(true);
       setUser(res.data.data.user);
       connectSocket();
       await refreshUser();
@@ -103,9 +98,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     enforceThemeOnlyLocalStorage();
     const res = await api.post('/auth/verify-otp', { identifier, otp, purpose });
     if (res.data.success) {
-      if (typeof window !== 'undefined') {
-        sessionStorage.setItem('jobconnect_session_active', 'true');
-      }
+      setSessionActive(true);
       setUser(res.data.data.user);
       connectSocket();
       await refreshUser();
@@ -117,10 +110,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await api.post('/auth/logout');
     } finally {
+      setSessionActive(false);
       enforceThemeOnlyLocalStorage();
-      if (typeof window !== 'undefined') {
-        sessionStorage.removeItem('jobconnect_session_active');
-      }
       setUser(null);
       setProfile(null);
       disconnectSocket();

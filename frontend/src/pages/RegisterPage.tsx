@@ -52,7 +52,8 @@ const PRESET_SKILLS = {
   'Cloud & DevOps': ['Docker', 'Kubernetes', 'AWS', 'Azure', 'GCP', 'CI/CD', 'Git', 'Linux'],
 };
 
-const DRAFT_STORAGE_KEY = 'jobconnect_register_draft_v1';
+// In-memory registration draft store (Zero trace in sessionStorage or localStorage)
+let inMemoryRegistrationDraft: Record<string, any> | null = null;
 
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -148,12 +149,11 @@ export const RegisterPage: React.FC = () => {
   const confirmPasswordValue = watch('confirmPassword') || '';
   const agreeTermsValue = watch('agreeTerms');
 
-  // Load draft from sessionStorage on initial load (non-sensitive info only)
+  // Load draft from in-memory store on initial load (non-sensitive info only)
   useEffect(() => {
     try {
-      const saved = sessionStorage.getItem(DRAFT_STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
+      if (inMemoryRegistrationDraft) {
+        const parsed = inMemoryRegistrationDraft;
         if (parsed.role) setValue('role', parsed.role, { shouldValidate: true });
         if (parsed.firstName) setValue('firstName', parsed.firstName);
         if (parsed.lastName) setValue('lastName', parsed.lastName);
@@ -177,7 +177,7 @@ export const RegisterPage: React.FC = () => {
         }
       }
     } catch {
-      // Ignore session storage errors
+      // Ignore memory draft errors
     }
   }, [setValue]);
 
@@ -351,7 +351,7 @@ export const RegisterPage: React.FC = () => {
     }
   };
 
-  // Save non-sensitive draft to sessionStorage
+  // Save non-sensitive draft to in-memory store
   const handleSaveDraft = () => {
     try {
       const draftData = {
@@ -367,8 +367,8 @@ export const RegisterPage: React.FC = () => {
         shortIntro: watch('shortIntro'),
         skills: selectedSkills,
       };
-      sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draftData));
-      setDraftNotice('Registration progress saved locally.');
+      inMemoryRegistrationDraft = draftData;
+      setDraftNotice('Registration progress saved.');
       setTimeout(() => setDraftNotice(null), 3500);
     } catch {
       // Ignore
@@ -533,9 +533,7 @@ export const RegisterPage: React.FC = () => {
       const response = await registerAuth(submissionData);
       if (response.success) {
         // Clear saved draft on successful account registration
-        try {
-          sessionStorage.removeItem(DRAFT_STORAGE_KEY);
-        } catch {}
+        inMemoryRegistrationDraft = null;
 
         navigate(
           `/verify-otp?userId=${response.data.userId}&email=${encodeURIComponent(

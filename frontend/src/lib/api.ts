@@ -28,6 +28,17 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// In-Memory Session Active State (Security: Zero storage in sessionStorage or localStorage)
+let isSessionActiveInMemory = false;
+
+export const setSessionActive = (active: boolean) => {
+  isSessionActiveInMemory = active;
+};
+
+export const getSessionActive = (): boolean => {
+  return isSessionActiveInMemory;
+};
+
 // Response interceptor to handle auto token refresh on 401 using secure HttpOnly cookies
 let isRefreshing = false;
 let failedQueue: Array<{ resolve: (val?: unknown) => void; reject: (err: unknown) => void }> = [];
@@ -48,7 +59,7 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Avoid infinite loop on auth endpoints & do not auto-refresh if session is not active
+    // Avoid infinite loop on auth endpoints & do not auto-refresh if session is not active in memory
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
@@ -57,7 +68,7 @@ api.interceptors.response.use(
       !originalRequest.url?.includes('/auth/register') &&
       !originalRequest.url?.includes('/auth/logout')
     ) {
-      if (typeof window !== 'undefined' && !sessionStorage.getItem('jobconnect_session_active')) {
+      if (!getSessionActive()) {
         return Promise.reject(error);
       }
       if (isRefreshing) {
@@ -74,9 +85,11 @@ api.interceptors.response.use(
       try {
         // Refresh token rotated via secure HttpOnly cookie
         await api.post('/auth/refresh');
+        setSessionActive(true);
         processQueue(null);
         return api(originalRequest);
       } catch (refreshErr) {
+        setSessionActive(false);
         processQueue(refreshErr);
         return Promise.reject(new Error('Your session has expired. Please sign in again.'));
       } finally {

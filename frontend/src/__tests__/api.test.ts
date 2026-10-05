@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { api } from '../lib/api.js';
+import { api, setSessionActive } from '../lib/api.js';
 
 class MockStorage {
   private store = new Map<string, string>();
@@ -124,11 +124,11 @@ describe('Frontend API Client Security & Interceptors (OWASP ASVS V3 & V4)', () 
       await expect(errorHandler(mock401Error)).rejects.toEqual(mock401Error);
     });
 
-    it('immediately rejects 401 when sessionStorage has no active session flag', async () => {
+    it('immediately rejects 401 when in-memory session is not active', async () => {
       const responseHandlers = (api.interceptors.response as any).handlers;
       const errorHandler = responseHandlers[0].rejected;
 
-      sessionStorage.removeItem('jobconnect_session_active');
+      setSessionActive(false);
 
       const mock401Error = {
         response: { status: 401 },

@@ -4,17 +4,22 @@ import { App } from './App.js';
 import './index.css';
 
 // Security Policy: Strictly enforce that ONLY 'theme' is permitted in localStorage.
-// Automatically purge all sensitive keys (AI chat sessions, IDs, tokens, preferences) to prevent credential/data leakage.
+// All session tokens, IDs, and preferences are kept 100% in memory; sessionStorage is kept completely empty.
 try {
-  if (typeof window !== 'undefined' && window.localStorage) {
-    const keysToRemove: string[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key !== 'theme') {
-        keysToRemove.push(key);
-      }
+  if (typeof window !== 'undefined') {
+    if (window.sessionStorage) {
+      sessionStorage.clear();
     }
-    keysToRemove.forEach((k) => localStorage.removeItem(k));
+    if (window.localStorage) {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key !== 'theme') {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach((k) => localStorage.removeItem(k));
+    }
   }
 } catch {}
 
