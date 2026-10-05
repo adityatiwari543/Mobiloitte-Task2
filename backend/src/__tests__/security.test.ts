@@ -25,6 +25,7 @@ import { normalizeOrigin, getAllowedOrigins, validateCorsOrigin } from '../confi
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import { uploadsSecurityMiddleware } from '../app.js';
 
 describe('JobConnect Security & Validation Test Suite (Section 6A & 31)', () => {
   describe('First Name Validation (Section 6A.3)', () => {
@@ -550,4 +551,60 @@ describe('JobConnect Security & Validation Test Suite (Section 6A & 31)', () => 
       expect(lockedAttempt.reason).toContain('Maximum verification attempts exceeded');
     });
   });
+
+  describe('Static File Uploads Security Sandbox (Issue 2 & OWASP ASVS V12)', () => {
+    function mockReqRes(path: string) {
+      const headers: Record<string, string> = {};
+      const req = { path } as any;
+      const res = {
+        setHeader: (k: string, v: string) => {
+          headers[k.toLowerCase()] = v;
+        },
+      } as any;
+      let nextCalled = false;
+      const next = () => {
+        nextCalled = true;
+      };
+      return { req, res, headers, next, getNextCalled: () => nextCalled };
+    }
+
+    it('attaches strict nosniff and CSP none headers on all requests', () => {
+      const { req, res, headers, next, getNextCalled } = mockReqRes('/resume.pdf');
+      uploadsSecurityMiddleware(req, res, next);
+      expect(getNextCalled()).toBe(true);
+      expect(headers['x-content-type-options']).toBe('nosniff');
+      expect(headers['content-security-policy']).toBe("default-src 'none'");
+      expect(headers['x-frame-options']).toBe('DENY');
+    });
+
+    it('forces Content-Disposition: attachment on non-raster files (e.g. PDF, DOCX, SVG, HTML)', () => {
+      const nonRasterPaths = [
+        '/user_resume.pdf',
+        '/application.docx',
+        '/malicious.svg',
+        '/payload.html',
+        '/script.js',
+      ];
+      for (const p of nonRasterPaths) {
+        const { req, res, headers, next } = mockReqRes(p);
+        uploadsSecurityMiddleware(req, res, next);
+        expect(headers['content-disposition']).toBe('attachment');
+      }
+    });
+
+    it('does not force Content-Disposition attachment on safe raster images (jpg, jpeg, png, webp)', () => {
+      const rasterPaths = [
+        '/avatar.png',
+        '/photo.jpg',
+        '/banner.jpeg',
+        '/icon.webp',
+      ];
+      for (const p of rasterPaths) {
+        const { req, res, headers, next } = mockReqRes(p);
+        uploadsSecurityMiddleware(req, res, next);
+        expect(headers['content-disposition']).toBeUndefined();
+      }
+    });
+  });
 });
+

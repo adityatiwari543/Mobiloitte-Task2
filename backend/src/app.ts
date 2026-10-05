@@ -50,23 +50,34 @@ app.use(cookieParser());
 
 // 4. Static Uploads Folder with Security Sandbox Headers (OWASP ASVS V12 & Section 6.13)
 const uploadsPath = getStorageDirectory();
-const uploadsSecurityMiddleware = (req: Request, res: Response, next: NextFunction) => {
+export const uploadsSecurityMiddleware = (req: Request, res: Response, next: NextFunction) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('Content-Security-Policy', "default-src 'none'; sandbox");
+  res.setHeader('Content-Security-Policy', "default-src 'none'");
   res.setHeader('X-Frame-Options', 'DENY');
-  // For non-image uploads (such as PDF, DOCX, resumes), force Content-Disposition attachment to prevent inline execution
-  if (!req.path.match(/\.(jpg|jpeg|png|webp|gif|svg)$/i)) {
+  // Browser me inline execute na ho, seedha safe download ho (SVG/HTML/PDF/DOCX strictly forced to attachment):
+  if (!req.path.match(/\.(jpg|jpeg|png|webp)$/i)) {
     res.setHeader('Content-Disposition', 'attachment');
   }
   next();
 };
 
-app.use('/uploads', uploadsSecurityMiddleware, express.static(uploadsPath));
+const staticUploadOptions = {
+  setHeaders: (res: Response, filePath: string) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Content-Security-Policy', "default-src 'none'");
+    res.setHeader('X-Frame-Options', 'DENY');
+    if (!filePath.match(/\.(jpg|jpeg|png|webp)$/i)) {
+      res.setHeader('Content-Disposition', 'attachment');
+    }
+  },
+};
+
+app.use('/uploads', uploadsSecurityMiddleware, express.static(uploadsPath, staticUploadOptions));
 
 // Also serve legacy backend/uploads as fallback so no legacy upload is ever lost
 const legacyUploadsPath = path.resolve(uploadsPath, '../backend/uploads');
 if (fs.existsSync(legacyUploadsPath)) {
-  app.use('/uploads', uploadsSecurityMiddleware, express.static(legacyUploadsPath));
+  app.use('/uploads', uploadsSecurityMiddleware, express.static(legacyUploadsPath, staticUploadOptions));
 }
 
 // 5. Anti-CSRF Token Generation & Protection (Section 6.6)
