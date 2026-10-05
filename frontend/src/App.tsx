@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './context/AuthContext.js';
 import { ThemeProvider } from './context/ThemeContext.js';
 import { AppLayout } from './components/layout/AppLayout.js';
 import { LoadingSpinner } from './components/common/LoadingSpinner.js';
+import { ErrorBoundary } from './components/common/ErrorBoundary.js';
 import { ROLES, UserRole } from '@jobconnect/shared';
 
 // Public Pages (Code-split on demand)
@@ -81,10 +82,11 @@ const ProtectedRoute: React.FC<{
 
 export const App: React.FC = () => {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <AuthProvider>
-          <BrowserRouter>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <AuthProvider>
+            <BrowserRouter>
             <Suspense fallback={<PageLoadingFallback />}>
               <Routes>
                 <Route path="/" element={<AppLayout />}>
@@ -208,5 +210,6 @@ export const App: React.FC = () => {
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
-  );
+  </ErrorBoundary>
+);
 };

@@ -34,6 +34,9 @@ const enforceThemeOnlyLocalStorage = () => {
   } catch {}
 };
 
+// Backward-compatibility alias for HMR modules & legacy closures
+const purgeLegacyStorageTokens = enforceThemeOnlyLocalStorage;
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<IUser | null>(null);
   const [profile, setProfile] = useState<any | null>(null);
