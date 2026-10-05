@@ -92,7 +92,8 @@ export class CompanyService {
 
     // Get jobs created by this recruiter
     const recruiterJobs = await Job.find({ recruiterId: recruiterObjId })
-      .select('_id title status applicantsCount createdAt location remoteType employmentType')
+      .select('_id title status applicantsCount createdAt updatedAt location remoteType employmentType skills experienceMin experienceMax salaryMin salaryMax currency description companyId')
+      .populate('companyId', 'name logoUrl isVerified')
       .sort({ createdAt: -1 });
     const jobIds = recruiterJobs.map((j) => j._id);
 

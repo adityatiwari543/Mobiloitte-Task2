@@ -26,10 +26,22 @@ export class CandidateService {
 
     const user = await User.findById(userId).select('-passwordHash');
     const completeness = profile.calculateCompleteness();
+    const [applicationsCount, savedJobsCount] = await Promise.all([
+      Application.countDocuments({
+        candidateId: new mongoose.Types.ObjectId(userId),
+        status: { $ne: 'withdrawn' },
+      }),
+      SavedJob.countDocuments({ userId: new mongoose.Types.ObjectId(userId) }),
+    ]);
+
     return {
       user,
       profile,
       profileCompletionPercentage: completeness,
+      metrics: {
+        totalApplications: applicationsCount,
+        savedJobsCount,
+      },
     };
   }
 
@@ -57,6 +69,24 @@ export class CandidateService {
     if (input.preferredLocations !== undefined) profile.preferredLocations = input.preferredLocations;
     if (input.expectedSalary !== undefined) profile.expectedSalary = input.expectedSalary;
     if (input.noticePeriod !== undefined) profile.noticePeriod = input.noticePeriod;
+    if (input.totalExperienceYears !== undefined) profile.totalExperienceYears = input.totalExperienceYears;
+    if (input.totalExperienceMonths !== undefined) profile.totalExperienceMonths = input.totalExperienceMonths;
+    if (input.educationDegree !== undefined) profile.educationDegree = input.educationDegree;
+    if (input.educationInstitution !== undefined) profile.educationInstitution = input.educationInstitution;
+    if (input.educationStartYear !== undefined) profile.educationStartYear = input.educationStartYear;
+    if (input.educationEndYear !== undefined) profile.educationEndYear = input.educationEndYear;
+
+    if (input.education === undefined && (input.educationDegree || input.educationInstitution || input.educationStartYear)) {
+      profile.education = [
+        {
+          degree: input.educationDegree || (input.highestQualification || 'Bachelor\'s Degree'),
+          institution: input.educationInstitution || 'University / College',
+          fieldOfStudy: input.educationDegree || 'Engineering / Higher Studies',
+          startYear: input.educationStartYear || 2020,
+          endYear: input.educationEndYear,
+        },
+      ];
+    }
 
     await profile.save();
 
@@ -139,10 +169,10 @@ export class CandidateService {
   static async getDashboard(userId: string) {
     const userObjectId = new mongoose.Types.ObjectId(userId);
 
-    const [profile, applicationsCount, savedJobsCount, upcomingInterviews, recentApplications] =
+    const [profile, applicationsCount, savedJobsCount, upcomingInterviews, rawRecentApplications] =
       await Promise.all([
         CandidateProfile.findOne({ userId: userObjectId }),
-        Application.countDocuments({ candidateId: userObjectId }),
+        Application.countDocuments({ candidateId: userObjectId, status: { $ne: 'withdrawn' } }),
         SavedJob.countDocuments({ userId: userObjectId }),
         Interview.find({
           candidateId: userObjectId,
@@ -152,15 +182,19 @@ export class CandidateService {
           .sort({ scheduledAt: 1 })
           .limit(3)
           .populate('recruiterId', 'name email'),
-        Application.find({ candidateId: userObjectId })
+        Application.find({ candidateId: userObjectId, status: { $ne: 'withdrawn' } })
           .sort({ appliedAt: -1 })
-          .limit(5)
+          .limit(10)
           .populate('jobId', 'title location remoteType companyId status')
           .populate({
             path: 'jobId',
             populate: { path: 'companyId', select: 'name logoUrl' },
           }),
       ]);
+
+    const recentApplications = rawRecentApplications
+      .filter((app: any) => app.jobId !== null && app.jobId !== undefined)
+      .slice(0, 5);
 
     // Deterministic recommended jobs based on candidate skills (Section 26)
     const candidateSkills = profile?.skills || [];
@@ -187,6 +221,7 @@ export class CandidateService {
     const completeness = profile ? profile.calculateCompleteness() : 0;
 
     return {
+      profile,
       profileCompletionPercentage: completeness,
       metrics: {
         totalApplications: applicationsCount,

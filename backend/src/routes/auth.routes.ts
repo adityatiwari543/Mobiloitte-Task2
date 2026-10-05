@@ -3,7 +3,7 @@ import { AuthController } from '../controllers/auth.controller.js';
 import { authenticateToken } from '../middlewares/auth.middleware.js';
 import { authRateLimiter, otpRateLimiter } from '../middlewares/rateLimiter.middleware.js';
 import { validateBody } from '../middlewares/validate.middleware.js';
-import { avatarUpload } from '../utils/upload.js';
+import { avatarUpload, validateUploadMagicBytes } from '../utils/upload.js';
 import {
   RegisterSchema,
   LoginSchema,
@@ -52,7 +52,13 @@ router.post(
   validateBody(ChangePasswordSchema),
   AuthController.changePassword
 );
-router.post('/avatar', authenticateToken, avatarUpload.single('avatar'), AuthController.uploadAvatar);
+router.post(
+  '/avatar',
+  authenticateToken,
+  avatarUpload.single('avatar'),
+  validateUploadMagicBytes('image'),
+  AuthController.uploadAvatar
+);
 router.delete('/avatar', authenticateToken, AuthController.removeAvatar);
 
 export const authRoutes = router;

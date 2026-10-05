@@ -41,7 +41,10 @@ export class RecruiterService {
     const jobIds = jobs.map((j) => j._id);
     const totalJobsPosted = jobs.length;
     const activeJobs = jobs.filter((j) => j.status === 'published').length;
-    const totalApplications = await Application.countDocuments({ jobId: { $in: jobIds } });
+    const [totalApplications, shortlisted] = await Promise.all([
+      Application.countDocuments({ jobId: { $in: jobIds } }),
+      Application.countDocuments({ jobId: { $in: jobIds }, status: 'shortlisted' }),
+    ]);
 
     return {
       user,
@@ -50,6 +53,7 @@ export class RecruiterService {
         totalJobsPosted,
         activeJobs,
         totalApplications,
+        shortlisted,
       },
     };
   }

@@ -1,0 +1,26 @@
+# Critical Business Logic Execution & Verification
+
+## 1. Age Calculation (`calculateAge`)
+- Input: `2001-01-01` | Expected: `25` | Actual: `25` | **PASS**
+- Input: `2013-10-01` | Expected: `13` | Actual: `13` | **PASS**
+- Input: `invalid-date` | Expected: `-1` | Actual: `-1` | **PASS**
+
+## 2. Section 6A Email Security Validation (`validateEmailSecurity`)
+- Input: `candidate@gmail.com` | Expected: `true` | Actual: `true` (OK) | **PASS**
+- Input: `test@test.com` | Expected: `false` | Actual: `false` (Generic test/dummy emails are not permitted.) | **PASS**
+- Input: `user@mailinator.com` | Expected: `false` | Actual: `false` (Disposable / temporary email addresses are not permitted.) | **PASS**
+
+## 3. Section 6A International Phone Validation (`getPhoneValidationState`)
+- Input: `9876543210` (IN) | Expected: `true` | Actual: `true` (OK) | **PASS**
+- Input: `1234567890` (IN) | Expected: `false` | Actual: `false` (National number must start with: 6, 7, 8, 9) | **PASS**
+- Input: `98765` (IN) | Expected: `false` | Actual: `false` (Phone number is too short (5 of 10 entered).) | **PASS**
+
+## 4. Profile Completeness Formula (`calculateCompleteness`)
+- Test 1: {"headline":"Dev","bio":"Bio","location":"BLR","skills":["TS"],"resumeUrl":"/res.pdf","experience":[{"company":"A"}],"education":[{"degree":"BS"}]} | Expected: `100` | Actual: `100` | **PASS**
+- Test 2: {"skills":["TS"],"resumeUrl":"/res.pdf"} | Expected: `40` | Actual: `40` | **PASS**
+- Test 3: {} | Expected: `0` | Actual: `0` | **PASS**
+
+## 5. Application State Machine Status Transition
+- Transition: `applied -> under_review` | Domain Valid: `true` | Accepted by Code: `true` | **PASS**
+- Transition: `rejected -> selected` | Domain Valid: `false` | Accepted by Code: `false` | **PASS**
+- Transition: `selected -> applied` | Domain Valid: `false` | Accepted by Code: `false` | **PASS**

@@ -1,0 +1,17 @@
+# Backend & API Analysis (Exhaustive)
+
+## Total Backend Endpoints: 65
+## Total Frontend API Calls: 99
+## BE Endpoints Used by Frontend: 59
+## BE Endpoints Not Used by Frontend: 6
+## FE Calls Unmatched (404 risk / dead code): 0
+
+### Unused Backend Endpoints List (6):
+- `GET /health` (backend/src/app.ts:78)
+- `GET /ready` (backend/src/app.ts:82)
+- `GET /api/v1/applications/:id` (backend/src/routes/application.routes.ts:60)
+- `GET /api/v1/companies/:id` (backend/src/routes/company.routes.ts:9)
+- `POST /api/v1/companies` (backend/src/routes/company.routes.ts:12)
+- `PATCH /api/v1/companies/:id` (backend/src/routes/company.routes.ts:13)
+
+### Unmatched Frontend Calls (0):

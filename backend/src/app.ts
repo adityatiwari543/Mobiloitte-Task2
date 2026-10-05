@@ -1,6 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
+import { corsOptions } from './config/cors.js';
 import cookieParser from 'cookie-parser';
 import path from 'path';
 import mongoose from 'mongoose';
@@ -39,21 +40,8 @@ app.use(
   })
 );
 
-// 2. Strict CORS Configuration (Section 6.7)
-app.use(
-  cors({
-    origin: [env.FRONTEND_URL, 'http://localhost:5173', 'http://127.0.0.1:5173'],
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: [
-      'Content-Type',
-      'Authorization',
-      'X-CSRF-Token',
-      'X-Requested-With',
-      'Accept',
-    ],
-  })
-);
+// 2. Strict CORS Configuration (OWASP ASVS V14 & Section 6.7)
+app.use(cors(corsOptions));
 
 // 3. Body & Cookie Parsing
 app.use(express.json({ limit: '2mb' }));

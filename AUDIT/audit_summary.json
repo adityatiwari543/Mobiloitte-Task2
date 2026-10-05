@@ -1,0 +1,95 @@
+{
+  "repo": [
+    {
+      "name": "JobConnect",
+      "remote": "https://github.com/adityatiwari543/Mobiloitte-Task2.git",
+      "branch": "main",
+      "head_sha": "706e48010157e88f2ba1e7dd98aed4a168f5b3e0",
+      "dirty": true
+    }
+  ],
+  "matches_submitted_sha": {
+    "frontend": true,
+    "backend": true
+  },
+  "stack": {
+    "frontend": "React 18.3.1, TypeScript 5.7.3, Vite 6.4.3, Tailwind CSS 3.4.17",
+    "backend": "Node.js 24.14.1, Express 4.21.2, TypeScript 5.7.3, Mongoose 8.12.1",
+    "db": "MongoDB 8.0, Redis 7.4 (with in-memory fallback)",
+    "state_mgmt": "@tanstack/react-query 5.66.11, React Context",
+    "ai_providers": [
+      "Google Gemini (gemini-3.5-flash-lite)",
+      "Deterministic Offline Career Adapter"
+    ]
+  },
+  "build": {
+    "fe": {
+      "build": "PASS",
+      "lint_errors": 0,
+      "type_errors": 0
+    },
+    "be": {
+      "build": "PASS",
+      "lint_errors": 0,
+      "type_errors": 0
+    }
+  },
+  "counts": {
+    "routes": 24,
+    "endpoints": 65,
+    "unguarded_endpoints": 8,
+    "idor_candidates": 0,
+    "fe_calls_without_be": 0,
+    "hardcoded_data_sites": 195,
+    "list_table_impls": 7,
+    "shared_list_components": 1,
+    "circular_deps": 0,
+    "duplication_pct": 6.07,
+    "todo_fixme": 0,
+    "any_casts": 126
+  },
+  "security": {
+    "vulns": {
+      "critical": 0,
+      "high": 5,
+      "medium": 2,
+      "low": 0
+    },
+    "secrets_in_history": 0,
+    "static_otp_or_mfa": false,
+    "env_committed": false,
+    "cors_wildcard": false
+  },
+  "tests": {
+    "files": 3,
+    "cases": 69,
+    "passed": 69,
+    "failed": 0,
+    "skipped": 0,
+    "line_coverage_pct": null
+  },
+  "ai": {
+    "call_sites": 4,
+    "llm": 4,
+    "ml": 0,
+    "rules_labelled_ai": 0,
+    "static": 4,
+    "rag": false,
+    "reranker": false,
+    "pii_redaction_before_llm": false,
+    "eval_set": false
+  },
+  "claims": {
+    "true": 18,
+    "partial": 2,
+    "false": 0,
+    "unverifiable": 0
+  },
+  "findings": {
+    "critical": 0,
+    "high": 0,
+    "medium": 4,
+    "low": 2,
+    "info": 2
+  }
+}

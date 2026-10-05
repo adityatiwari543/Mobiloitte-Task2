@@ -53,6 +53,12 @@ export const UpdateProfileSchema = z.object({
     })
     .optional(),
   noticePeriod: z.string().max(50).optional(),
+  totalExperienceYears: z.number().int().min(0).max(50).optional(),
+  totalExperienceMonths: z.number().int().min(0).max(11).optional(),
+  educationDegree: z.string().max(100).optional(),
+  educationInstitution: z.string().max(150).optional(),
+  educationStartYear: z.number().int().min(1950).max(new Date().getFullYear() + 10).optional(),
+  educationEndYear: z.number().int().min(1950).max(new Date().getFullYear() + 15).optional(),
 });
 
 export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>;

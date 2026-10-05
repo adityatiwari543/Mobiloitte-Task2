@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { Request } from 'express';
@@ -49,13 +50,13 @@ export class AuthService {
     }
     const phoneE164 = phoneValidation.e164;
 
-    // Database-level race-condition protected uniqueness checks (Section 6A.13, 6A.20, 6A.42)
+    // Database-level race-condition protected uniqueness checks (Section 6A.13, 6A.20, 6A.42) 
     const existingEmail = await User.findOne({ email: normalizedEmail });
     if (existingEmail) {
       throw {
         statusCode: 409,
         code: ERROR_CODES.EMAIL_ALREADY_EXISTS,
-        message: 'An account with this email address already exists.',
+        message: 'An account with this email address already exists.',  
       };
     }
 
@@ -141,13 +142,7 @@ export class AuthService {
     await storeOtpInRedis('email_verification', user._id.toString(), otp);
     await storeOtpInRedis('email_verification', user.email.toLowerCase(), otp);
 
-    // Development diagnostic log
-    console.log(`\n========================================`);
-    console.log(`🔐 [JobConnect Verification OTP]`);
-    console.log(`User: ${user.email} (${user._id})`);
-    console.log(`Purpose: email_verification`);
-    console.log(`OTP Code: ${otp}`);
-    console.log(`========================================\n`);
+
 
     // Dispatch OTP email via SMTP
     await EmailService.sendOtpEmail(user.email, otp, 'email_verification');
@@ -175,7 +170,10 @@ export class AuthService {
 
   // 2. OTP Verification (Section 6A.35-6A.41)
   static async verifyOtp(input: VerifyOtpInput, req: Request) {
-    let user = await User.findById(input.identifier);
+    let user = null;
+    if (mongoose.Types.ObjectId.isValid(input.identifier)) {
+      user = await User.findById(input.identifier);
+    }
     if (!user) {
       // Allow verifying by email as well
       user = await User.findOne({ email: input.identifier.toLowerCase() });
@@ -251,7 +249,10 @@ export class AuthService {
 
   // 3. Resend OTP with 60s cooldown (Section 6A.38)
   static async resendOtp(input: ResendOtpInput) {
-    let user = await User.findById(input.identifier);
+    let user = null;
+    if (mongoose.Types.ObjectId.isValid(input.identifier)) {
+      user = await User.findById(input.identifier);
+    }
     if (!user) {
       user = await User.findOne({ email: input.identifier.toLowerCase() });
     }
@@ -273,12 +274,7 @@ export class AuthService {
       };
     }
 
-    console.log(`\n========================================`);
-    console.log(`🔄 [JobConnect Resent OTP]`);
-    console.log(`User: ${user.email} (${user._id})`);
-    console.log(`Purpose: ${input.purpose}`);
-    console.log(`OTP Code: ${otp}`);
-    console.log(`========================================\n`);
+
 
     // Dispatch OTP email via SMTP
     await EmailService.sendOtpEmail(user.email, otp, input.purpose as any);
@@ -334,7 +330,10 @@ export class AuthService {
       // Trigger new OTP verification challenge
       const otp = generate6DigitOtp();
       await storeOtpInRedis('email_verification', user._id.toString(), otp);
-      console.log(`\n🔐 Pending Verification OTP for ${user.email}: ${otp}\n`);
+      await storeOtpInRedis('email_verification', user.email.toLowerCase(), otp);
+
+      // Dispatch OTP email via SMTP
+      await EmailService.sendOtpEmail(user.email, otp, 'email_verification');
 
       return {
         pendingVerification: true,
@@ -495,13 +494,7 @@ export class AuthService {
     // Also store hashed token with 15-minute TTL for fallback
     await redisService.set(`pwreset:${cleanEmail}`, hashedToken, 15 * 60);
 
-    console.log(`\n========================================`);
-    console.log(`🔐 [JobConnect Password Reset OTP]`);
-    console.log(`User: ${cleanEmail} (${user._id})`);
-    console.log(`Role: ${user.role}`);
-    console.log(`OTP Code: ${otp}`);
-    console.log(`Reset Token: ${resetToken}`);
-    console.log(`========================================\n`);
+
 
     // Dispatch OTP email via SMTP
     await EmailService.sendOtpEmail(cleanEmail, otp, 'password_reset');
@@ -529,11 +522,7 @@ export class AuthService {
       };
     }
 
-    console.log(`\n========================================`);
-    console.log(`🔍 [Verifying Password Reset OTP]`);
-    console.log(`User: ${cleanEmail} (${user._id})`);
-    console.log(`Input OTP: "${cleanOtp}"`);
-    console.log(`========================================\n`);
+
 
     // Verify primarily against email identifier
     let verification = await verifyOtpFromRedis(

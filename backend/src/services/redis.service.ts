@@ -131,6 +131,89 @@ class RedisService {
     return 1;
   }
 
+  async incr(key: string): Promise<number> {
+    if (!this.isFallbackMode && this.client) {
+      try {
+        return await this.client.incr(key);
+      } catch {
+        this.isFallbackMode = true;
+      }
+    }
+    this.purgeExpiredInMemory();
+    const entry = this.inMemoryStore.get(key);
+    if (!entry) {
+      this.inMemoryStore.set(key, { value: '1', expiresAt: null });
+      return 1;
+    }
+    const val = parseInt(entry.value, 10) || 0;
+    const newVal = val + 1;
+    entry.value = newVal.toString();
+    return newVal;
+  }
+
+  async ttl(key: string): Promise<number> {
+    if (!this.isFallbackMode && this.client) {
+      try {
+        return await this.client.ttl(key);
+      } catch {
+        this.isFallbackMode = true;
+      }
+    }
+    this.purgeExpiredInMemory();
+    const entry = this.inMemoryStore.get(key);
+    if (!entry || !entry.expiresAt) return -1;
+    const remaining = Math.ceil((entry.expiresAt - Date.now()) / 1000);
+    return remaining > 0 ? remaining : -2;
+  }
+
+  /**
+   * Atomic Rate Limiter Operation (OWASP ASVS V3 & V13 Concurrency & Race-Condition Safe)
+   * Executes atomic INCR + EXPIRE via Redis EVAL script or thread-safe in-memory store.
+   * Eliminates TOCTOU race conditions where concurrent requests bypass rate limits.
+   */
+  async incrementRateLimit(key: string, windowSeconds: number): Promise<{ count: number; ttlSeconds: number }> {
+    if (!this.isFallbackMode && this.client) {
+      try {
+        const script = `
+          local current = redis.call('INCR', KEYS[1])
+          if current == 1 then
+            redis.call('EXPIRE', KEYS[1], ARGV[1])
+          end
+          local ttl = redis.call('TTL', KEYS[1])
+          return {current, ttl}
+        `;
+        const res = (await this.client.eval(script, 1, key, windowSeconds)) as [number, number];
+        return {
+          count: res[0],
+          ttlSeconds: res[1] > 0 ? res[1] : windowSeconds,
+        };
+      } catch {
+        this.isFallbackMode = true;
+      }
+    }
+
+    this.purgeExpiredInMemory();
+    const now = Date.now();
+    let entry = this.inMemoryStore.get(key);
+    if (!entry || (entry.expiresAt !== null && entry.expiresAt <= now)) {
+      entry = {
+        value: '1',
+        expiresAt: now + windowSeconds * 1000,
+      };
+      this.inMemoryStore.set(key, entry);
+      return { count: 1, ttlSeconds: windowSeconds };
+    }
+
+    const currentVal = parseInt(entry.value, 10) || 0;
+    const count = currentVal + 1;
+    entry.value = count.toString();
+    const remainingMs = entry.expiresAt ? Math.max(0, entry.expiresAt - now) : 0;
+    return {
+      count,
+      ttlSeconds: Math.max(1, Math.ceil(remainingMs / 1000)),
+    };
+  }
+
   async deletePattern(pattern: string): Promise<number> {
     if (!this.isFallbackMode && this.client) {
       try {

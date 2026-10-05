@@ -1,0 +1,29 @@
+# Environment & Secret Keys Audit
+
+Total Environment Keys Found in `.env`: 22
+Keys in `.env.example`: 22
+
+| Key | Type | Masked Value | In .env.example? | Used in Code? | Committed to Git? |
+|---|---|---|---|---|---|
+| `NODE_ENV` | Network/Environment | `de... (len: 11)` | YES | YES | NO (.env uncommitted; key present in .env.example / code) |
+| `PORT` | Network/Environment | `50... (len: 4)` | YES | YES | NO (.env uncommitted; key present in .env.example / code) |
+| `FRONTEND_URL` | Network/Environment | `ht... (len: 21)` | YES | YES | NO (.env uncommitted; key present in .env.example / code) |
+| `COOKIE_DOMAIN` | API Key | `lo... (len: 9)` | YES | YES | NO (.env uncommitted; key present in .env.example / code) |
+| `MONGO_URI` | Database | `mo... (len: 94)` | YES | YES | NO (.env uncommitted; key present in .env.example / code) |
+| `REDIS_URL` | Database | `re... (len: 22)` | YES | YES | NO (.env uncommitted; key present in .env.example / code) |
+| `JWT_ACCESS_SECRET` | JWT/Auth Secret | `jo... (len: 52)` | YES | YES | NO (.env uncommitted; key present in .env.example / code) |
+| `JWT_REFRESH_SECRET` | JWT/Auth Secret | `jo... (len: 53)` | YES | YES | NO (.env uncommitted; key present in .env.example / code) |
+| `JWT_ACCESS_EXPIRY` | JWT/Auth Secret | `15... (len: 3)` | YES | YES | NO (.env uncommitted; key present in .env.example / code) |
+| `JWT_REFRESH_EXPIRY` | JWT/Auth Secret | `7d...` | YES | YES | NO (.env uncommitted; key present in .env.example / code) |
+| `CSRF_SECRET` | JWT/Auth Secret | `jo... (len: 45)` | YES | YES | NO (.env uncommitted; key present in .env.example / code) |
+| `AI_PROVIDER` | API Key | `de... (len: 13)` | YES | YES | NO (.env uncommitted; key present in .env.example / code) |
+| `AI_API_KEY` | API Key | `EMPTY` | YES | YES | NO (.env uncommitted; key present in .env.example / code) |
+| `AI_MODEL_NAME` | API Key | `ge... (len: 16)` | YES | YES | NO (.env uncommitted; key present in .env.example / code) |
+| `SMTP_HOST` | SMTP/Email | `sm... (len: 14)` | YES | YES | NO (.env uncommitted; key present in .env.example / code) |
+| `SMTP_PORT` | SMTP/Email | `46... (len: 3)` | YES | YES | NO (.env uncommitted; key present in .env.example / code) |
+| `SMTP_SECURE` | SMTP/Email | `tr... (len: 4)` | YES | YES | NO (.env uncommitted; key present in .env.example / code) |
+| `SMTP_USER` | SMTP/Email | `ad... (len: 26)` | YES | YES | NO (.env uncommitted; key present in .env.example / code) |
+| `SMTP_PASSWORD` | SMTP/Email | `ae... (len: 16)` | YES | YES | NO (.env uncommitted; key present in .env.example / code) |
+| `FROM_EMAIL` | API Key | `"J... (len: 50)` | YES | YES | NO (.env uncommitted; key present in .env.example / code) |
+| `STORAGE_PROVIDER` | Storage | `lo... (len: 5)` | YES | YES | NO (.env uncommitted; key present in .env.example / code) |
+| `STORAGE_DIR` | Storage | `./... (len: 9)` | YES | YES | NO (.env uncommitted; key present in .env.example / code) |

@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
+import fs from 'fs';
 import { CandidateService } from '../services/candidate.service.js';
 import { sendSuccess, sendError } from '../utils/response.js';
+import { validateFileMagicBytes } from '../utils/upload.js';
 import { ERROR_CODES } from '@jobconnect/shared';
 
 export class CandidateController {
@@ -38,6 +40,18 @@ export class CandidateController {
       }
       if (!req.file) {
         sendError(res, ERROR_CODES.VALIDATION_ERROR, 'No resume file provided.', 400);
+        return;
+      }
+      if (!validateFileMagicBytes(req.file.path, 'resume')) {
+        try {
+          if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        } catch {}
+        sendError(
+          res,
+          ERROR_CODES.VALIDATION_ERROR,
+          'Invalid file format. Binary signature does not match PDF, Word document, or image.',
+          400
+        );
         return;
       }
       const data = await CandidateService.uploadResume(req.user.userId, req.file);

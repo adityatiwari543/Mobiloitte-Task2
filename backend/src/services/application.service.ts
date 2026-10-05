@@ -1,17 +1,79 @@
 import mongoose from 'mongoose';
 import { Application } from '../models/Application.js';
 import { Job } from '../models/Job.js';
+import { User } from '../models/User.js';
 import { Notification } from '../models/Notification.js';
 import { Interview } from '../models/Interview.js';
+import { AuditLog } from '../models/AuditLog.js';
 import { redisService } from './redis.service.js';
 import {
   ApplyJobInput,
   UpdateApplicationStatusInput,
   ScheduleInterviewInput,
   ApplicationStatus,
+  APPLICATION_STATUS,
   ERROR_CODES,
   ROLES,
 } from '@jobconnect/shared';
+
+/**
+ * Strict State Machine Transition Rules (OWASP ASVS V11 - Business Logic Verification)
+ * Enforces valid hiring pipeline workflow transitions and prevents unauthorized jumps or resurrection of terminal states.
+ */
+export const ALLOWED_STATUS_TRANSITIONS: Record<string, readonly string[]> = {
+  [APPLICATION_STATUS.APPLIED]: [
+    APPLICATION_STATUS.APPLIED,
+    APPLICATION_STATUS.UNDER_REVIEW,
+    APPLICATION_STATUS.SHORTLISTED,
+    APPLICATION_STATUS.REJECTED,
+  ],
+  [APPLICATION_STATUS.UNDER_REVIEW]: [
+    APPLICATION_STATUS.UNDER_REVIEW,
+    APPLICATION_STATUS.SHORTLISTED,
+    APPLICATION_STATUS.INTERVIEW,
+    APPLICATION_STATUS.REJECTED,
+  ],
+  [APPLICATION_STATUS.SHORTLISTED]: [
+    APPLICATION_STATUS.SHORTLISTED,
+    APPLICATION_STATUS.INTERVIEW,
+    APPLICATION_STATUS.SELECTED,
+    APPLICATION_STATUS.REJECTED,
+  ],
+  [APPLICATION_STATUS.INTERVIEW]: [
+    APPLICATION_STATUS.INTERVIEW,
+    APPLICATION_STATUS.SHORTLISTED,
+    APPLICATION_STATUS.SELECTED,
+    APPLICATION_STATUS.REJECTED,
+  ],
+  [APPLICATION_STATUS.SELECTED]: [
+    APPLICATION_STATUS.SELECTED,
+    APPLICATION_STATUS.REJECTED,
+  ],
+  [APPLICATION_STATUS.REJECTED]: [
+    APPLICATION_STATUS.REJECTED,
+    APPLICATION_STATUS.UNDER_REVIEW,
+  ],
+  [APPLICATION_STATUS.WITHDRAWN]: [],
+};
+
+export function isValidApplicationStatusTransition(
+  currentStatus: string,
+  targetStatus: string,
+  userRole?: string
+): boolean {
+  if (currentStatus === APPLICATION_STATUS.WITHDRAWN) {
+    return false;
+  }
+  // Admin role override (except withdrawn applications which are candidate-revoked)
+  if (userRole === ROLES.ADMIN) {
+    return true;
+  }
+  const allowed = ALLOWED_STATUS_TRANSITIONS[currentStatus];
+  if (!allowed) {
+    return false;
+  }
+  return allowed.includes(targetStatus);
+}
 
 export class ApplicationService {
   // 1. Submit Application (Section 45 & 50)
@@ -103,13 +165,33 @@ export class ApplicationService {
       })
     );
 
+    // Also notify Admins for real-time applications tracking
+    try {
+      const admins = await User.find({ role: ROLES.ADMIN }).select('_id');
+      if (admins.length > 0) {
+        const adminNotifs = admins.map((admin) => ({
+          userId: admin._id,
+          type: 'application_update' as const,
+          title: 'New Candidate Application',
+          message: `New application submitted for "${job.title}".`,
+          data: { jobId: job._id, applicationId: application._id },
+          isRead: false,
+          createdAt: new Date(),
+        }));
+        await Notification.insertMany(adminNotifs);
+      }
+    } catch {
+      // Ignore background notification creation error
+    }
+
     return application;
   }
 
   // 2. Candidate: View own applications
   static async getMyApplications(candidateId: string) {
-    return Application.find({
+    const apps = await Application.find({
       candidateId: new mongoose.Types.ObjectId(candidateId),
+      status: { $ne: 'withdrawn' },
     })
       .sort({ appliedAt: -1 })
       .populate('jobId', 'title location remoteType employmentType companyId status applicationDeadline')
@@ -117,6 +199,9 @@ export class ApplicationService {
         path: 'jobId',
         populate: { path: 'companyId', select: 'name logoUrl location' },
       });
+
+    // Remove any orphaned applications where the job was deleted
+    return apps.filter((app) => app.jobId !== null && app.jobId !== undefined);
   }
 
   // 3. View single application with IDOR guard (Section 6.15)
@@ -167,14 +252,21 @@ export class ApplicationService {
       };
     }
 
-    if (app.status === 'withdrawn') {
-      return { message: 'Application is already withdrawn.' };
+    // Delete any scheduled interviews for this application
+    const { Interview } = await import('../models/Interview.js');
+    await Interview.deleteMany({ applicationId: app._id });
+
+    // Decrement applicant count on the Job if it exists
+    if (app.jobId) {
+      await Job.findByIdAndUpdate(app.jobId, {
+        $inc: { applicantsCount: -1 },
+      });
     }
 
-    app.status = 'withdrawn';
-    await app.save();
+    // Permanently remove application so it is completely removed from the candidate's list
+    await Application.findByIdAndDelete(app._id);
 
-    return { message: 'Application withdrawn successfully.' };
+    return { message: 'Application withdrawn and removed from your list successfully.' };
   }
 
   // 5. Recruiter: View applicants for a specific job (Section 51)
@@ -234,6 +326,28 @@ export class ApplicationService {
       };
     }
 
+    const currentStatus = app.status;
+
+    // Terminal state guard: Withdrawn cannot be modified
+    if (currentStatus === APPLICATION_STATUS.WITHDRAWN) {
+      throw {
+        statusCode: 400,
+        code: ERROR_CODES.VALIDATION_ERROR,
+        message: 'Cannot update an application that has been withdrawn by the candidate.',
+      };
+    }
+
+    // State machine transition validation
+    if (!isValidApplicationStatusTransition(currentStatus, input.status, userRole)) {
+      const allowed = ALLOWED_STATUS_TRANSITIONS[currentStatus] || [];
+      throw {
+        statusCode: 400,
+        code: ERROR_CODES.VALIDATION_ERROR,
+        message: `Illegal application status transition from "${currentStatus}" to "${input.status}". Allowed transitions: ${allowed.join(', ') || 'none'}.`,
+      };
+    }
+
+    const isStatusChanged = currentStatus !== input.status;
     app.status = input.status as ApplicationStatus;
     if (input.note) {
       app.recruiterNotes.push({
@@ -244,6 +358,24 @@ export class ApplicationService {
     }
 
     await app.save();
+
+    // Audit log state change
+    if (isStatusChanged) {
+      try {
+        await AuditLog.create({
+          actorUserId: new mongoose.Types.ObjectId(recruiterId),
+          action: 'APPLICATION_STATUS_UPDATED',
+          resourceType: 'Application',
+          resourceId: app._id.toString(),
+          metadata: {
+            jobId: job._id?.toString() || job.id,
+            previousStatus: currentStatus,
+            newStatus: input.status,
+            note: input.note || null,
+          },
+        });
+      } catch {}
+    }
 
     // Create Candidate notification
     const stageTitles: Record<string, string> = {
@@ -304,6 +436,22 @@ export class ApplicationService {
         statusCode: 403,
         code: ERROR_CODES.FORBIDDEN,
         message: 'You are not authorized to schedule interviews for this job.',
+      };
+    }
+
+    if (app.status === APPLICATION_STATUS.WITHDRAWN) {
+      throw {
+        statusCode: 400,
+        code: ERROR_CODES.VALIDATION_ERROR,
+        message: 'Cannot schedule an interview for a withdrawn application.',
+      };
+    }
+
+    if (app.status === APPLICATION_STATUS.REJECTED) {
+      throw {
+        statusCode: 400,
+        code: ERROR_CODES.VALIDATION_ERROR,
+        message: 'Cannot schedule an interview for a rejected application. Re-open to under review first.',
       };
     }
 

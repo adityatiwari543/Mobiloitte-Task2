@@ -710,12 +710,7 @@ export const RegisterSchema = z
           return;
         }
         const age = calculateAge(val);
-        if (age < VALIDATION_LIMITS.MIN_AGE_YEARS) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: `You must be at least ${VALIDATION_LIMITS.MIN_AGE_YEARS} years old to register.`,
-          });
-        } else if (age > VALIDATION_LIMITS.MAX_AGE_YEARS) {
+        if (age > VALIDATION_LIMITS.MAX_AGE_YEARS) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: `Please enter a valid birth date (maximum age ${VALIDATION_LIMITS.MAX_AGE_YEARS} years).`,
@@ -745,6 +740,22 @@ export const RegisterSchema = z
     agreePrivacy: z.boolean().default(true).optional(),
   })
   .superRefine((data, ctx) => {
+    // Role-specific minimum age check
+    if (data.dateOfBirth) {
+      const age = calculateAge(data.dateOfBirth);
+      const isRecruiter = data.role === ROLES.RECRUITER;
+      const minAge = isRecruiter ? VALIDATION_LIMITS.MIN_AGE_RECRUITER : VALIDATION_LIMITS.MIN_AGE_CANDIDATE;
+      if (age >= 0 && age < minAge) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['dateOfBirth'],
+          message: isRecruiter
+            ? `Recruiters must be at least ${VALIDATION_LIMITS.MIN_AGE_RECRUITER} years old to register.`
+            : `Candidates must be at least ${VALIDATION_LIMITS.MIN_AGE_CANDIDATE} years old to register.`,
+        });
+      }
+    }
+
     // Confirm password match
     if (data.password !== data.confirmPassword) {
       ctx.addIssue({

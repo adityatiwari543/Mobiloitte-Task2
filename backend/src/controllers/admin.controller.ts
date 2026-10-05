@@ -51,15 +51,31 @@ export class AdminController {
 
   static async listJobs(req: Request, res: Response): Promise<void> {
     try {
-      const { page, limit, status } = req.query;
+      const { page, limit, status, search } = req.query;
       const data = await AdminService.listJobs({
         page: page ? parseInt(page as string, 10) : undefined,
         limit: limit ? parseInt(limit as string, 10) : undefined,
         status: status as string,
+        search: search as string,
       });
       sendSuccess(res, data, 'Jobs retrieved for moderation.');
     } catch {
       sendError(res, ERROR_CODES.INTERNAL_SERVER_ERROR, 'Failed to fetch jobs.', 500);
+    }
+  }
+
+  static async listApplications(req: Request, res: Response): Promise<void> {
+    try {
+      const { page, limit, status, search } = req.query;
+      const data = await AdminService.listApplications({
+        page: page ? parseInt(page as string, 10) : undefined,
+        limit: limit ? parseInt(limit as string, 10) : undefined,
+        status: status as string,
+        search: search as string,
+      });
+      sendSuccess(res, data, 'Applications retrieved successfully.');
+    } catch {
+      sendError(res, ERROR_CODES.INTERNAL_SERVER_ERROR, 'Failed to fetch applications.', 500);
     }
   }
 
@@ -83,11 +99,13 @@ export class AdminController {
 
   static async listAuditLogs(req: Request, res: Response): Promise<void> {
     try {
-      const { page, limit } = req.query;
-      const data = await AdminService.listAuditLogs(
-        page ? parseInt(page as string, 10) : undefined,
-        limit ? parseInt(limit as string, 10) : undefined
-      );
+      const { page, limit, category, search } = req.query;
+      const data = await AdminService.listAuditLogs({
+        page: page ? parseInt(page as string, 10) : undefined,
+        limit: limit ? parseInt(limit as string, 10) : undefined,
+        category: category as string,
+        search: search as string,
+      });
       sendSuccess(res, data, 'Audit logs retrieved.');
     } catch {
       sendError(res, ERROR_CODES.INTERNAL_SERVER_ERROR, 'Failed to fetch audit logs.', 500);

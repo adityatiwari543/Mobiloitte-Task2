@@ -1,0 +1,11 @@
+package,severity,advisory_id,installed_version,patched_version,path,reachable
+"@vitest/mocker","moderate","GHSA-82fw-gwwq-j7x9","2.1.0 - 4.1.10","5.0.3","node_modules/@vitest/mocker","DEV_DEPENDENCY_ONLY"
+"braces","high","GHSA-vfj7-8cjw-p6xm","*","4.3.3","node_modules/braces","DEV_DEPENDENCY_ONLY"
+"chokidar","high","GHSA-transitive","2.0.0 - 3.6.0","4.3.3","node_modules/chokidar","DEV_DEPENDENCY_ONLY"
+"fast-glob","high","GHSA-transitive","*","Available","node_modules/fast-glob","DEV_DEPENDENCY_ONLY"
+"micromatch","high","GHSA-transitive",">=0.2.0","4.3.3","node_modules/micromatch","DEV_DEPENDENCY_ONLY"
+"tailwindcss","high","GHSA-transitive","<=0.0.0-oxide-insiders.ff2c25f || 2.1.0-canary.1 - 3.4.19","4.3.3","node_modules/tailwindcss","DEV_DEPENDENCY_ONLY"
+"tailwindcss","high","GHSA-transitive","<=0.0.0-oxide-insiders.ff2c25f || 2.1.0-canary.1 - 3.4.19","4.3.3","node_modules/tailwindcss","DEV_DEPENDENCY_ONLY"
+"tailwindcss","high","GHSA-transitive","<=0.0.0-oxide-insiders.ff2c25f || 2.1.0-canary.1 - 3.4.19","4.3.3","node_modules/tailwindcss","DEV_DEPENDENCY_ONLY"
+"vitest","moderate","GHSA-transitive","2.1.0-beta.1 - 4.1.10","5.0.3","node_modules/vitest","DEV_DEPENDENCY_ONLY"
+"vitest","moderate","GHSA-82fw-gwwq-j7x9","2.1.0-beta.1 - 4.1.10","5.0.3","node_modules/vitest","DEV_DEPENDENCY_ONLY"

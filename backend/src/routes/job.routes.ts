@@ -11,12 +11,12 @@ import {
 
 const router = Router();
 
+// Saved Jobs endpoints (Candidate authenticated)
+router.get('/saved/all', authenticateToken, authorizeRoles(ROLES.CANDIDATE), JobController.listSavedJobs);
+
 // Public Job discovery endpoints
 router.get('/', validateQuery(JobFilterQuerySchema), JobController.listJobs);
 router.get('/:id', JobController.getJobById);
-
-// Saved Jobs endpoints (Candidate authenticated)
-router.get('/saved/all', authenticateToken, authorizeRoles(ROLES.CANDIDATE), JobController.listSavedJobs);
 router.post('/:id/save', authenticateToken, authorizeRoles(ROLES.CANDIDATE), JobController.saveJob);
 router.delete('/:id/save', authenticateToken, authorizeRoles(ROLES.CANDIDATE), JobController.unsaveJob);
 

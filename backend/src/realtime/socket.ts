@@ -5,6 +5,7 @@ import { verifyAccessToken, TokenPayload } from '../utils/token.js';
 import { ACCESS_COOKIE_NAME } from '../utils/cookie.js';
 import { redisService } from '../services/redis.service.js';
 import { env } from '../config/env.js';
+import { validateCorsOrigin } from '../config/cors.js';
 
 export class SocketGateway {
   private static io: SocketIOServer | null = null;
@@ -12,7 +13,7 @@ export class SocketGateway {
   static initialize(httpServer: HttpServer): SocketIOServer {
     this.io = new SocketIOServer(httpServer, {
       cors: {
-        origin: env.FRONTEND_URL,
+        origin: validateCorsOrigin,
         credentials: true,
       },
     });

@@ -1,0 +1,29 @@
+# Data Layer & Database Normalisation Analysis
+
+## Entity & Collection Inventory (10 Mongoose Models):
+
+| Collection / Model | File | LOC | Defined Compound & Unique Indexes |
+|---|---|---|---|
+| **Application** | `backend/src/models/Application.ts` | 72 | `{ candidateId: 1, jobId: 1 }, { unique: true }`<br/>`{ jobId: 1, status: 1, appliedAt: -1 }`<br/>`{ candidateId: 1, appliedAt: -1 }` |
+| **AuditLog** | `backend/src/models/AuditLog.ts` | 36 | `{ actorUserId: 1, createdAt: -1 }` |
+| **CandidateProfile** | `backend/src/models/CandidateProfile.ts` | 136 | `{ skills: 1 }` |
+| **Company** | `backend/src/models/Company.ts` | 57 | `{ recruiterIds: 1 }` |
+| **Interview** | `backend/src/models/Interview.ts` | 57 | `{ candidateId: 1, scheduledAt: 1 }`<br/>`{ recruiterId: 1, scheduledAt: 1 }` |
+| **Job** | `backend/src/models/Job.ts` | 86 | `{ status: 1, createdAt: -1 }`<br/>`{ companyId: 1, status: 1 }`<br/>`{ recruiterId: 1, status: 1 }`<br/>`{ skills: 1 }`<br/>`{ location: 1, remoteType: 1 }`<br/>`{ title: 'text', description: 'text' }` |
+| **Notification** | `backend/src/models/Notification.ts` | 42 | `{ userId: 1, isRead: 1, createdAt: -1 }` |
+| **SavedJob** | `backend/src/models/SavedJob.ts` | 35 | `{ userId: 1, jobId: 1 }, { unique: true }` |
+| **Session** | `backend/src/models/Session.ts` | 55 | `{ expiresAt: 1 }, { expireAfterSeconds: 0 }`<br/>`{ userId: 1, revokedAt: 1 }` |
+| **User** | `backend/src/models/User.ts` | 99 | `{ role: 1, status: 1 }` |
+
+## Floating-Point / Number Money Fields (Precision Risk):
+- [backend/src/models/Job.ts:58] `Job`: `salaryMin: { type: Number },` (Stored as JavaScript IEEE-754 Number / Double; should use integer cents or Decimal128)
+- [backend/src/models/Job.ts:59] `Job`: `salaryMax: { type: Number },` (Stored as JavaScript IEEE-754 Number / Double; should use integer cents or Decimal128)
+
+## Denormalized Relational Copies (Sync Risk):
+
+## N+1 Query Loop Hotspots in Services:
+No direct await-in-loop ORM queries detected.
+
+## Migration Strategy:
+- Migrations directory: NONE. (No migrate-mongo, Umzug, or Prisma migrations. Mongoose schemas rely entirely on automatic runtime collection creation and in-memory index sync via `autoIndex`).
+- Seed scripts: `backend/src/scripts/seed.ts`, `backend/src/scripts/seed50Jobs.ts`.

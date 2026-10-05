@@ -148,7 +148,7 @@ If you did not request this code, please ignore this email.
     `.trim();
 
     if (!this.transporter || !this.isConfigured) {
-      console.log(`ℹ️ [EmailService Simulated Delivery] To: ${toEmail} | OTP: ${otp} | Purpose: ${purpose}`);
+      console.log(`ℹ️ [EmailService Simulated Delivery] To: ${toEmail} | Purpose: ${purpose}`);
       return { success: true, messageId: 'simulated' };
     }
 

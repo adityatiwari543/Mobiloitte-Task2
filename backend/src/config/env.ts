@@ -41,7 +41,7 @@ const envSchema = z.object({
       }).min(16, 'CSRF_SECRET must be at least 16 characters for security.'),
   AI_PROVIDER: z.enum(['deterministic', 'gemini', 'openai']).default('deterministic'),
   AI_API_KEY: z.string().optional().default(''),
-  AI_MODEL_NAME: z.string().default('gemini-1.5-flash'),
+  AI_MODEL_NAME: z.string().default('gemini-3.5-flash-lite'),
   STORAGE_PROVIDER: z.enum(['local', 's3', 'cloudinary']).default('local'),
   STORAGE_DIR: z.string().default('./uploads'),
 

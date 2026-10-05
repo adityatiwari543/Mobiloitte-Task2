@@ -14,6 +14,7 @@ router.get('/users', AdminController.listUsers);
 router.patch('/users/:id/status', AdminController.updateUserStatus);
 router.get('/jobs', AdminController.listJobs);
 router.patch('/jobs/:id/moderate', AdminController.moderateJob);
+router.get('/applications', AdminController.listApplications);
 router.get('/audit-logs', AdminController.listAuditLogs);
 router.get('/profile', AdminController.getProfile);
 router.patch('/profile', AdminController.updateProfile);

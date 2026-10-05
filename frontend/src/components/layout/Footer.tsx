@@ -3,15 +3,17 @@ import { Briefcase, Shield, Sparkles, Heart } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (
-    <footer className="bg-slate-900 text-slate-300 py-12 border-t border-slate-800">
+    <footer className="bg-slate-900 dark:bg-[#080B14] text-slate-300 py-12 border-t border-slate-800 dark:border-slate-800/80 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           <div className="space-y-3">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white">
-                <Briefcase className="w-4 h-4" />
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white font-black text-xs shadow-sm">
+                <span>JC</span>
               </div>
-              <span className="text-lg font-bold text-white tracking-tight">JobConnect</span>
+              <span className="text-lg font-bold text-white tracking-tight">
+                Job<span className="text-indigo-400">Connect</span>
+              </span>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed">
               Enterprise-grade Job Portal engineered with MERN, TypeScript, Redis caching, real-time Socket.IO, and AI career matching.

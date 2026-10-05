@@ -3,6 +3,8 @@ import mongoose from 'mongoose';
 import { Job, IJobDocument } from '../models/Job.js';
 import { Company } from '../models/Company.js';
 import { SavedJob } from '../models/SavedJob.js';
+import { Application } from '../models/Application.js';
+import { Interview } from '../models/Interview.js';
 import { redisService } from './redis.service.js';
 import {
   CreateJobInput,
@@ -345,16 +347,20 @@ export class JobService {
       };
     }
 
+    const appIds = await Application.find({ jobId: job._id }).distinct('_id');
+
     await Promise.all([
       Job.findByIdAndDelete(jobId),
       SavedJob.deleteMany({ jobId: job._id }),
+      Application.deleteMany({ jobId: job._id }),
+      Interview.deleteMany({ applicationId: { $in: appIds } }),
     ]);
 
     // Invalidate caches
     await redisService.del(`jobs:item:${jobId}`);
     await redisService.deletePattern('jobs:list:*');
 
-    return { message: 'Job posting deleted successfully.' };
+    return { message: 'Job posting and all associated applications deleted permanently.' };
   }
 
   // 7. Save / Bookmark Job

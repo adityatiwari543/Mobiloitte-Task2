@@ -1,0 +1,26 @@
+﻿
+> jobconnect-backend@1.0.0 test:security
+> vitest run src/__tests__/security.test.ts
+
+
+[1m[46m RUN [49m[22m [36mv3.2.7 [39m[90mC:/Users/Admin/Documents/Aditya programs/Task2/backend[39m
+
+node.exe : [90mstderr[2m | src/__tests__/security.test.ts[2m > [22m[2mJobConnect Security & Validation Test Suite 
+(Section 6A & 31)[2m > [22m[2mPassword Hashing & JWT Security (Section 6.1, 6.2)[2m > [22m[2mhashes passwords 
+with bcrypt cost factor and verifies safely
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([90mstderr[2m...verifies safely:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[22m[39mΓä╣∩╕Å Redis offline. Resilient in-memory cache active for OTP & rate limiting.
+
+ [32mΓ£ô[39m src/__tests__/security.test.ts [2m([22m[2m26 tests[22m[2m)[22m[33m 456[2mms[22m[39m
+   [33m[2mΓ£ô[22m[39m JobConnect Security & Validation Test Suite (Section 6A & 31)[2m > [22mPassword Hashing & JWT Security (Section 6.1, 6.2)[2m > [22mhashes passwords with bcrypt cost factor and verifies safely [33m 427[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m26 passed[39m[22m[90m (26)[39m
+[2m   Start at [22m 18:55:27
+[2m   Duration [22m 2.50s[2m (transform 394ms, setup 0ms, collect 877ms, tests 456ms, environment 2ms, prepare 591ms)[22m
+

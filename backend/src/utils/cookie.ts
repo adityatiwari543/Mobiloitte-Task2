@@ -19,16 +19,13 @@ export function setAuthCookies(
   accessToken: string,
   refreshToken: string
 ): void {
-  // Access Token Cookie (15 minutes)
+  // Session-scoped cookies: Cleared automatically by browser when session/window closes
   res.cookie(ACCESS_COOKIE_NAME, accessToken, {
     ...baseCookieOptions,
-    maxAge: 15 * 60 * 1000, // 15m in ms
   });
 
-  // Refresh Token Cookie (7 days)
   res.cookie(REFRESH_COOKIE_NAME, refreshToken, {
     ...baseCookieOptions,
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
   });
 }
 

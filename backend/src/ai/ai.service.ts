@@ -9,6 +9,7 @@ import { createJobDescriptionPrompt } from './prompts/jobDescription.prompt.js';
 import { createCareerAssistantPrompt } from './prompts/careerAssistant.prompt.js';
 import { Job } from '../models/Job.js';
 import { CandidateProfile } from '../models/CandidateProfile.js';
+import { User } from '../models/User.js';
 import { redisService } from '../services/redis.service.js';
 import { env } from '../config/env.js';
 
@@ -103,33 +104,95 @@ class AIService {
   }
 
   // 4. Interactive AI Career Assistant (Section 15.6)
-  async askCareerAssistant(userQuery: string, candidateUserId?: string) {
+  async askCareerAssistant(
+    userQuery: string,
+    candidateUserId?: string,
+    history?: Array<{ sender: string; text: string }>
+  ) {
     let candidateSkills: string[] = [];
+    let candidateName = '';
+    let candidateHeadline = '';
+    let hasResume = false;
+    let profileCompleteness = 50;
+
     if (candidateUserId) {
-      const profile = await CandidateProfile.findOne({
-        userId: new mongoose.Types.ObjectId(candidateUserId),
-      });
-      if (profile) candidateSkills = profile.skills;
+      const [user, profile] = await Promise.all([
+        User.findById(candidateUserId).select('name firstName lastName'),
+        CandidateProfile.findOne({ userId: new mongoose.Types.ObjectId(candidateUserId) }),
+      ]);
+      if (user) {
+        candidateName = user.firstName || user.name || '';
+      }
+      if (profile) {
+        candidateSkills = profile.skills || [];
+        candidateHeadline = profile.headline || '';
+        hasResume = Boolean(profile.resumeUrl);
+        profileCompleteness = profile.calculateCompleteness();
+      }
     }
 
-    // Retrieve up to 3 recent platform jobs for grounded context (anti-hallucination)
+    // Retrieve recent platform jobs for grounded context (anti-hallucination)
     const recentJobs = await Job.find({ status: 'published' })
       .sort({ createdAt: -1 })
-      .limit(3)
-      .select('title skills location remoteType');
+      .limit(4)
+      .select('title skills location remoteType employmentType');
 
     const recentJobsSnippet = recentJobs
-      .map((j) => `- ${j.title} (${j.remoteType}): Skills: [${j.skills.join(', ')}]`)
+      .map((j) => `- ${j.title} (${j.remoteType}, ${j.employmentType}): Skills: [${j.skills.join(', ')}] in ${j.location}`)
       .join('\n');
+
+    // If candidate asks for jobs or matching roles, pull actual active matching jobs
+    const isJobSearchIntent = /\b(job|jobs|hiring|role|roles|opening|openings|opportunity|opportunities|work|vacancy|vacancies|recommend|match)\b/i.test(userQuery);
+    let matchedJobs: any[] = [];
+    if (isJobSearchIntent) {
+      const filter: any = { status: 'published' };
+      if (candidateSkills.length > 0) {
+        filter.$or = [
+          { skills: { $in: candidateSkills } },
+          { title: { $regex: candidateSkills[0] || 'developer', $options: 'i' } }
+        ];
+      }
+      matchedJobs = await Job.find(filter)
+        .sort({ createdAt: -1 })
+        .limit(3)
+        .populate('companyId', 'name logoUrl location isVerified')
+        .select('title slug skills location remoteType employmentType salaryMin salaryMax currency companyId');
+    }
 
     const prompt = createCareerAssistantPrompt({
       userQuery,
+      candidateName,
       userSkills: candidateSkills,
+      candidateHeadline,
+      hasResume,
+      profileCompleteness,
       recentJobsSnippet,
+      history,
     });
 
-    const response = await this.provider.generateText(prompt, { temperature: 0.6 });
-    return { response, provider: this.provider.providerName };
+    const rawResponse = await this.provider.generateText(prompt, { temperature: 0.5, maxTokens: 3000 });
+
+    let response = rawResponse;
+    const suggestions: string[] = [];
+
+    const match = rawResponse.match(/<<<SUGGESTIONS>>>([\s\S]*?)<<<END_SUGGESTIONS>>>/);
+    if (match) {
+      response = rawResponse.replace(/<<<SUGGESTIONS>>>[\s\S]*?<<<END_SUGGESTIONS>>>/, '').trim();
+      const lines = match[1].split('\n');
+      for (const line of lines) {
+        const cleaned = line.replace(/^[\s*\-•\d.)]+/, '').trim();
+        if (cleaned && cleaned.length > 5) {
+          suggestions.push(cleaned);
+        }
+      }
+    }
+
+    return {
+      response,
+      suggestions: suggestions.slice(0, 4),
+      matchedJobs,
+      provider: this.provider.providerName,
+    };
   }
 }
 

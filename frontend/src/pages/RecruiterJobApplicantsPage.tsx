@@ -99,16 +99,17 @@ export const RecruiterJobApplicantsPage: React.FC = () => {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <BackButton label="Back to Postings" fallbackUrl="/recruiter/jobs" className="mb-3" />
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Applicant Pipeline</h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Manage candidate progressions and schedule interviews</p>
-        </div>
+    <div className="min-h-screen bg-[#fdfaf5] dark:bg-[#080B14] text-slate-900 dark:text-slate-100 transition-colors">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <BackButton label="Back to Postings" fallbackUrl="/recruiter/jobs" className="mb-3" />
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Applicant Pipeline</h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Manage candidate progressions and schedule interviews</p>
+          </div>
 
-        {/* Filter Pills */}
-        <div className="flex flex-wrap gap-1.5 bg-white dark:bg-slate-900 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 transition-colors">
+          {/* Filter Pills */}
+          <div className="flex flex-wrap gap-1.5 bg-white dark:bg-[#0D1220] p-1.5 rounded-xl border border-slate-200/90 dark:border-slate-800/80 transition-colors">
           {stages.map((st) => (
             <button
               key={st.value}
@@ -132,7 +133,7 @@ export const RecruiterJobApplicantsPage: React.FC = () => {
           description="Candidates who apply for this position will appear here in the hiring pipeline."
         />
       ) : (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm transition-colors">
+        <div className="bg-white dark:bg-[#0D1220] rounded-2xl border border-slate-200/90 dark:border-slate-800/80 overflow-hidden shadow-xs transition-colors">
           <div className="divide-y divide-slate-100 dark:divide-slate-800">
             {applicants.map((app: any) => {
               const candidate = app.candidateId;
@@ -371,6 +372,7 @@ export const RecruiterJobApplicantsPage: React.FC = () => {
           </div>
         </div>
       </Modal>
+      </div>
     </div>
   );
 };

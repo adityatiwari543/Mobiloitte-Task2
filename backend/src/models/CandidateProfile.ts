@@ -39,6 +39,12 @@ export interface ICandidateProfileDocument extends Document {
     currency: string;
   };
   noticePeriod?: string;
+  totalExperienceYears?: number;
+  totalExperienceMonths?: number;
+  educationDegree?: string;
+  educationInstitution?: string;
+  educationStartYear?: number;
+  educationEndYear?: number;
   createdAt: Date;
   updatedAt: Date;
   calculateCompleteness(): number;
@@ -96,6 +102,12 @@ const CandidateProfileSchema = new Schema<ICandidateProfileDocument>(
       currency: { type: String, default: 'INR' },
     },
     noticePeriod: { type: String },
+    totalExperienceYears: { type: Number, default: 0 },
+    totalExperienceMonths: { type: Number, default: 0 },
+    educationDegree: { type: String, trim: true },
+    educationInstitution: { type: String, trim: true },
+    educationStartYear: { type: Number },
+    educationEndYear: { type: Number },
   },
   {
     timestamps: true,

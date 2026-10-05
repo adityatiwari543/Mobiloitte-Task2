@@ -32,6 +32,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const refreshUser = async () => {
+    // If the browser/system was closed and reopened, ensure session starts fresh
+    const isSessionActive =
+      typeof window !== 'undefined' ? sessionStorage.getItem('jobconnect_session_active') : null;
+
+    if (!isSessionActive) {
+      try {
+        await api.post('/auth/logout');
+      } catch {}
+      setUser(null);
+      setProfile(null);
+      disconnectSocket();
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const response = await api.get('/auth/me');
       if (response.data.success) {
@@ -61,6 +76,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     purgeLegacyStorageTokens();
     const res = await api.post('/auth/login', credentials);
     if (res.data.success && !res.data.data.pendingVerification) {
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('jobconnect_session_active', 'true');
+      }
       setUser(res.data.data.user);
       connectSocket();
       await refreshUser();
@@ -77,6 +95,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     purgeLegacyStorageTokens();
     const res = await api.post('/auth/verify-otp', { identifier, otp, purpose });
     if (res.data.success) {
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('jobconnect_session_active', 'true');
+      }
       setUser(res.data.data.user);
       connectSocket();
       await refreshUser();
@@ -89,6 +110,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await api.post('/auth/logout');
     } finally {
       purgeLegacyStorageTokens();
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('jobconnect_session_active');
+      }
       setUser(null);
       setProfile(null);
       disconnectSocket();

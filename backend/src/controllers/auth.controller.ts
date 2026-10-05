@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import path from 'path';
 import fs from 'fs';
 import { env } from '../config/env.js';
-import { getStorageDirectory } from '../utils/upload.js';
+import { getStorageDirectory, validateFileMagicBytes } from '../utils/upload.js';
 import { AuthService } from '../services/auth.service.js';
 import { setAuthCookies, clearAuthCookies, REFRESH_COOKIE_NAME } from '../utils/cookie.js';
 import { sendSuccess, sendError } from '../utils/response.js';
@@ -37,7 +37,6 @@ export class AuthController {
           user: result.user,
           sessionId: result.sessionId,
           accessToken: result.accessToken,
-          refreshToken: result.refreshToken,
         },
         'Account verified and logged in successfully.'
       );
@@ -83,7 +82,6 @@ export class AuthController {
           user: result.user,
           sessionId: result.sessionId,
           accessToken: result.accessToken,
-          refreshToken: result.refreshToken,
         },
         'Login successful.'
       );
@@ -111,7 +109,6 @@ export class AuthController {
       sendSuccess(res, {
         message: 'Token rotated successfully.',
         accessToken: result.accessToken,
-        refreshToken: result.refreshToken,
       });
     } catch (err: unknown) {
       clearAuthCookies(res);
@@ -220,6 +217,13 @@ export class AuthController {
       }
       if (!req.file) {
         sendError(res, ERROR_CODES.VALIDATION_ERROR, 'No image file provided for avatar.', 400);
+        return;
+      }
+      if (!validateFileMagicBytes(req.file.path, 'image')) {
+        try {
+          if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        } catch {}
+        sendError(res, ERROR_CODES.VALIDATION_ERROR, 'Invalid image format. Binary signature does not match JPEG, PNG, or WEBP.', 400);
         return;
       }
       const user = await User.findById(req.user.userId);

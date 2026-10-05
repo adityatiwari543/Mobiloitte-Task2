@@ -1,0 +1,296 @@
+.env
+.env.example
+.gitignore
+backend/
+  .env
+  .env.example
+  Dockerfile
+  package.json
+  src/
+    ai/
+      ai.service.ts
+      interfaces/
+        aiProvider.interface.ts
+      prompts/
+        candidateMatch.prompt.ts
+        careerAssistant.prompt.ts
+        jobDescription.prompt.ts
+        jobSummary.prompt.ts
+      providers/
+        deterministicProvider.ts
+        geminiProvider.ts
+    app.ts
+    config/
+      cors.ts
+      db.ts
+      env.ts
+    controllers/
+      admin.controller.ts
+      ai.controller.ts
+      application.controller.ts
+      auth.controller.ts
+      candidate.controller.ts
+      company.controller.ts
+      job.controller.ts
+      notification.controller.ts
+      recruiter.controller.ts
+      session.controller.ts
+    middlewares/
+      auth.middleware.ts
+      csrf.middleware.ts
+      rateLimiter.middleware.ts
+      validate.middleware.ts
+    models/
+      Application.ts
+      AuditLog.ts
+      CandidateProfile.ts
+      Company.ts
+      index.ts
+      Interview.ts
+      Job.ts
+      Notification.ts
+      SavedJob.ts
+      Session.ts
+      User.ts
+    realtime/
+      socket.ts
+    routes/
+      admin.routes.ts
+      ai.routes.ts
+      application.routes.ts
+      auth.routes.ts
+      candidate.routes.ts
+      company.routes.ts
+      job.routes.ts
+      notification.routes.ts
+      recruiter.routes.ts
+      session.routes.ts
+    scripts/
+      fixApplicantsCount.ts
+      resetDemoPasswords.ts
+      seed.ts
+      seed50Jobs.ts
+    server.ts
+    services/
+      admin.service.ts
+      application.service.ts
+      auth.service.ts
+      candidate.service.ts
+      company.service.ts
+      email.service.ts
+      job.service.ts
+      notification.service.ts
+      recruiter.service.ts
+      redis.service.ts
+      session.service.ts
+    types/
+      declarations.d.ts
+    utils/
+      cookie.ts
+      otp.ts
+      response.ts
+      token.ts
+      upload.ts
+    __tests__/
+      security.test.ts
+  tsconfig.json
+  uploads/
+    .gitkeep
+    avatar-68cf7137-38db-4f7a-834c-f6e6d838752b.jpg
+    avatar-f8e1d7e9-1165-42f9-bc5c-2a1262d22958.jpg
+    resume-3aca91fa-4a45-4b60-827e-026618952aae.pdf
+card_0_orig.png
+card_1_orig.png
+card_2_orig.png
+card_3_orig.png
+clean_hero_light_ns.png
+clean_hero_light_telea.png
+crop_bottom_right.png
+crop_mid_left.png
+crop_top_left.png
+crop_top_right.png
+dark_bright_elements.png
+dark_debug.png
+dark_inspect.png
+debug_card_boxes.png
+docker-compose.yml
+docs/
+  ai.md
+  api.md
+  architecture.md
+  database.md
+  deployment.md
+  redis.md
+  security.md
+extracted_dark_ui.png
+extracted_light_ui.png
+frontend/
+  Dockerfile
+  index.html
+  package.json
+  postcss.config.js
+  public/
+    auth-hero-clean-dark.png
+    auth-hero-clean-light.png
+    auth-hero-dark.png
+    auth-hero-facing-clean.png
+    auth-hero-facing-signin-perfect.png
+    auth-hero-facing-signin.png
+    auth-hero-flipped-test.png
+    auth-hero-light.png
+    auth-laptop-mockup-dark.png
+    auth-laptop-mockup-light.png
+    auth-visual-clean-dark.png
+    auth-visual-clean-light.png
+    auth-visual-dark.png
+    auth-visual-light.png
+    clean-hero-facing-signin-dark.png
+    clean-hero-facing-signin-light.png
+    clean-laptop-dark.png
+    clean-laptop-light.png
+    dark_boundary.png
+    enhanced-panel-dark.png
+    enhanced-panel-light.png
+    hero-bg.png
+    hero-clean-dark.jpg
+    hero-clean-light.jpg
+    hero-dark-person.png
+    hero-light-person.png
+    hero-right-dark-v2.png
+    hero-right-dark.png
+    hero-right-light-v2.png
+    hero-right-light.png
+    light_boundary.png
+    note-dark-test.png
+    note-light-test.png
+    note-light.png
+    ref_dark_hero.png
+    ref_light_hero.png
+    ref_person_crop.png
+    test_dark_1.jpg
+    test_dark_2.jpg
+    test_light_1.jpg
+    test_light_2.jpg
+    test_masked_curve.png
+    tuned_mask_test.png
+  src/
+    App.tsx
+    components/
+      admin/
+        common/
+        dashboard/
+        layout/
+      auth/
+        AuthBranding.tsx
+        AuthVisual.tsx
+        FloatingAuthBadges.tsx
+        ForgotPasswordCard.tsx
+        HeroVisual.tsx
+        index.ts
+        register/
+        SignInCard.tsx
+      common/
+        BackButton.tsx
+        Badge.tsx
+        Button.tsx
+        EmptyState.tsx
+        Input.tsx
+        LoadingSpinner.tsx
+        Modal.tsx
+        ProfileAvatarUpload.tsx
+      hero/
+        AIRecommendationCard.tsx
+        Badge.tsx
+        CleanBackgroundImage.tsx
+        Description.tsx
+        Heading.tsx
+        Hero.tsx
+        HeroContent.tsx
+        HeroVisual.tsx
+        index.ts
+        InterviewCard.tsx
+        MatchScoreCard.tsx
+        Search.tsx
+        TrendingSkills.tsx
+        VerifiedCompaniesCard.tsx
+      layout/
+        AppLayout.tsx
+        Footer.tsx
+        Navbar.tsx
+    context/
+      AuthContext.tsx
+      ThemeContext.tsx
+    index.css
+    lib/
+      api.ts
+      socket.ts
+    main.tsx
+    pages/
+      AdminApplicationsPage.tsx
+      AdminAuditLogsPage.tsx
+      AdminDashboardPage.tsx
+      AdminJobsPage.tsx
+      AdminProfilePage.tsx
+      AdminUsersPage.tsx
+      CandidateAIAssistantPage.tsx
+      CandidateApplicationsPage.tsx
+      CandidateDashboardPage.tsx
+      CandidateProfilePage.tsx
+      CandidateSavedJobsPage.tsx
+      ForgotPasswordPage.tsx
+      HomePage.tsx
+      JobDetailPage.tsx
+      JobsPage.tsx
+      LoginPage.tsx
+      RecruiterDashboardPage.tsx
+      RecruiterJobApplicantsPage.tsx
+      RecruiterJobCreatePage.tsx
+      RecruiterJobsPage.tsx
+      RecruiterProfilePage.tsx
+      RegisterPage.tsx
+      VerifyOtpPage.tsx
+    __tests__/
+      api.test.ts
+  tailwind.config.js
+  tsconfig.json
+  vite.config.ts
+inpaint_check_bottom_right.png
+inpaint_check_mid_left.png
+inpaint_check_top_left.png
+inpaint_check_top_right.png
+inspect_hero_light_person.png
+light_debug.png
+package-lock.json
+package.json
+README.md
+refined_hero_light.png
+shared/
+  package.json
+  src/
+    constants/
+      blockedEmailPatterns.ts
+      countries.ts
+      qualifications.ts
+      roles.ts
+      validation.ts
+    index.ts
+    schemas/
+      application.schema.ts
+      auth.schema.ts
+      job.schema.ts
+      profile.schema.ts
+      user.schema.ts
+    types/
+      index.ts
+    __tests__/
+      schemas.test.ts
+  tsconfig.json
+test_inpainted_ns.png
+test_inpainted_telea.png
+tsconfig.base.json
+uploads/
+  .gitkeep
+  avatar-68cf7137-38db-4f7a-834c-f6e6d838752b.jpg
+  avatar-92a73323-b581-4a1f-954f-820ff5d6a162.jpg
+  avatar-f8e1d7e9-1165-42f9-bc5c-2a1262d22958.jpg
+  resume-3aca91fa-4a45-4b60-827e-026618952aae.pdf

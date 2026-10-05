@@ -7,7 +7,7 @@ const router = Router();
 router.use(authenticateToken);
 
 router.get('/', SessionController.listSessions);
-router.delete('/:sessionId', SessionController.revokeSession);
 router.delete('/actions/revoke-others', SessionController.revokeOtherSessions);
+router.delete('/:sessionId', SessionController.revokeSession);
 
 export const sessionRoutes = router;

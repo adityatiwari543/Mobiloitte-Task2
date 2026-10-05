@@ -10,19 +10,22 @@ async function bootstrap() {
   // Initialize Socket.IO real-time gateway
   SocketGateway.initialize(server);
 
-  // Connect to MongoDB
-  try {
-    await connectDB();
-    // Auto-seed initial demo jobs if database is empty
-    const { seedDatabase } = await import('./scripts/seed.js');
-    await seedDatabase();
-  } catch (err) {
-    console.warn('⚠️ Starting HTTP server without immediate MongoDB connection (reconnecting in background)...');
-  }
+  // Connect to MongoDB with auto-retry
+  const initDB = async () => {
+    try {
+      await connectDB();
+      const { seedDatabase } = await import('./scripts/seed.js');
+      await seedDatabase();
+    } catch (err) {
+      console.warn('⚠️ MongoDB connection not ready yet. Retrying in 5s...');
+      setTimeout(initDB, 5000);
+    }
+  };
+  await initDB();
 
-  server.listen(env.PORT, () => {
+  server.listen(env.PORT, '0.0.0.0', () => {
     console.log(`\n======================================================`);
-    console.log(`🚀 JobConnect Backend API Running on http://localhost:${env.PORT}`);
+    console.log(`🚀 JobConnect Backend API Running on http://127.0.0.1:${env.PORT}`);
     console.log(`📡 Socket.IO Real-Time Gateway Active`);
     console.log(`🌍 Environment: ${env.NODE_ENV}`);
     console.log(`======================================================\n`);

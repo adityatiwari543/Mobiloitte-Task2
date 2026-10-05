@@ -12,9 +12,19 @@ import {
   calculateAge,
   FIRST_NAME_REGEX,
   LAST_NAME_REGEX,
+  APPLICATION_STATUS,
+  ROLES,
 } from '@jobconnect/shared';
 import { generateAccessToken, verifyAccessToken } from '../utils/token.js';
-import { hashOtp } from '../utils/otp.js';
+import { hashOtp, storeOtpInRedis, verifyOtpFromRedis } from '../utils/otp.js';
+import { validateFileMagicBytes } from '../utils/upload.js';
+import { isValidApplicationStatusTransition } from '../services/application.service.js';
+import { redisService } from '../services/redis.service.js';
+import { env } from '../config/env.js';
+import { normalizeOrigin, getAllowedOrigins, validateCorsOrigin } from '../config/cors.js';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
 
 describe('JobConnect Security & Validation Test Suite (Section 6A & 31)', () => {
   describe('First Name Validation (Section 6A.3)', () => {
@@ -296,6 +306,248 @@ describe('JobConnect Security & Validation Test Suite (Section 6A & 31)', () => 
         confirmPassword: 'NewSecurePassword123!',
       });
       expect(result.success).toBe(false);
+    });
+  });
+
+  describe('Binary Magic Bytes File Validation (OWASP ASVS V12 - Section 12)', () => {
+    const tempDir = os.tmpdir();
+
+    it('accepts genuine PDF file with %PDF header', () => {
+      const filePath = path.join(tempDir, 'test-valid.pdf');
+      fs.writeFileSync(filePath, Buffer.from('%PDF-1.7\nSample PDF content'));
+      try {
+        expect(validateFileMagicBytes(filePath, 'pdf')).toBe(true);
+        expect(validateFileMagicBytes(filePath, 'resume')).toBe(true);
+      } finally {
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      }
+    });
+
+    it('accepts genuine PNG file with \\x89PNG header', () => {
+      const filePath = path.join(tempDir, 'test-valid.png');
+      fs.writeFileSync(filePath, Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00]));
+      try {
+        expect(validateFileMagicBytes(filePath, 'image')).toBe(true);
+        expect(validateFileMagicBytes(filePath, 'resume')).toBe(true);
+      } finally {
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      }
+    });
+
+    it('accepts genuine JPEG file with \\xFF\\xD8\\xFF header', () => {
+      const filePath = path.join(tempDir, 'test-valid.jpg');
+      fs.writeFileSync(filePath, Buffer.from([0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46]));
+      try {
+        expect(validateFileMagicBytes(filePath, 'image')).toBe(true);
+        expect(validateFileMagicBytes(filePath, 'resume')).toBe(true);
+      } finally {
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      }
+    });
+
+    it('rejects executable file (.exe MZ header) disguised as PDF', () => {
+      const filePath = path.join(tempDir, 'test-malicious.pdf');
+      fs.writeFileSync(filePath, Buffer.from([0x4D, 0x5A, 0x90, 0x00, 0x03, 0x00, 0x00, 0x00]));
+      try {
+        expect(validateFileMagicBytes(filePath, 'pdf')).toBe(false);
+        expect(validateFileMagicBytes(filePath, 'resume')).toBe(false);
+      } finally {
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      }
+    });
+
+    it('rejects script file (e.g. PHP/HTML) disguised as image or PDF', () => {
+      const filePath = path.join(tempDir, 'test-script.png');
+      fs.writeFileSync(filePath, Buffer.from('<?php system($_GET["cmd"]); ?>'));
+      try {
+        expect(validateFileMagicBytes(filePath, 'image')).toBe(false);
+        expect(validateFileMagicBytes(filePath, 'pdf')).toBe(false);
+        expect(validateFileMagicBytes(filePath, 'resume')).toBe(false);
+      } finally {
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      }
+    });
+
+    it('returns false safely for non-existent files', () => {
+      expect(validateFileMagicBytes('/non-existent-path/fake.pdf', 'pdf')).toBe(false);
+    });
+  });
+
+  describe('Application Pipeline State Machine Transitions (OWASP ASVS V11 - Business Logic)', () => {
+    it('allows valid forward stage transitions in the hiring funnel', () => {
+      expect(isValidApplicationStatusTransition(APPLICATION_STATUS.APPLIED, APPLICATION_STATUS.UNDER_REVIEW)).toBe(true);
+      expect(isValidApplicationStatusTransition(APPLICATION_STATUS.APPLIED, APPLICATION_STATUS.SHORTLISTED)).toBe(true);
+      expect(isValidApplicationStatusTransition(APPLICATION_STATUS.UNDER_REVIEW, APPLICATION_STATUS.SHORTLISTED)).toBe(true);
+      expect(isValidApplicationStatusTransition(APPLICATION_STATUS.SHORTLISTED, APPLICATION_STATUS.INTERVIEW)).toBe(true);
+      expect(isValidApplicationStatusTransition(APPLICATION_STATUS.INTERVIEW, APPLICATION_STATUS.SELECTED)).toBe(true);
+    });
+
+    it('allows rejection from any active workflow stage', () => {
+      expect(isValidApplicationStatusTransition(APPLICATION_STATUS.APPLIED, APPLICATION_STATUS.REJECTED)).toBe(true);
+      expect(isValidApplicationStatusTransition(APPLICATION_STATUS.UNDER_REVIEW, APPLICATION_STATUS.REJECTED)).toBe(true);
+      expect(isValidApplicationStatusTransition(APPLICATION_STATUS.SHORTLISTED, APPLICATION_STATUS.REJECTED)).toBe(true);
+      expect(isValidApplicationStatusTransition(APPLICATION_STATUS.INTERVIEW, APPLICATION_STATUS.REJECTED)).toBe(true);
+      expect(isValidApplicationStatusTransition(APPLICATION_STATUS.SELECTED, APPLICATION_STATUS.REJECTED)).toBe(true);
+    });
+
+    it('rejects illegal direct state jumps that bypass interview/screening stages', () => {
+      // Applied directly to Selected without screening/interview
+      expect(isValidApplicationStatusTransition(APPLICATION_STATUS.APPLIED, APPLICATION_STATUS.SELECTED)).toBe(false);
+      // Under Review directly to Selected without interview
+      expect(isValidApplicationStatusTransition(APPLICATION_STATUS.UNDER_REVIEW, APPLICATION_STATUS.SELECTED)).toBe(false);
+      // Rejected directly to Selected without re-evaluation
+      expect(isValidApplicationStatusTransition(APPLICATION_STATUS.REJECTED, APPLICATION_STATUS.SELECTED)).toBe(false);
+    });
+
+    it('strictly prohibits any transitions from terminal WITHDRAWN status', () => {
+      expect(isValidApplicationStatusTransition(APPLICATION_STATUS.WITHDRAWN, APPLICATION_STATUS.APPLIED)).toBe(false);
+      expect(isValidApplicationStatusTransition(APPLICATION_STATUS.WITHDRAWN, APPLICATION_STATUS.UNDER_REVIEW)).toBe(false);
+      expect(isValidApplicationStatusTransition(APPLICATION_STATUS.WITHDRAWN, APPLICATION_STATUS.SHORTLISTED)).toBe(false);
+      expect(isValidApplicationStatusTransition(APPLICATION_STATUS.WITHDRAWN, APPLICATION_STATUS.INTERVIEW)).toBe(false);
+      expect(isValidApplicationStatusTransition(APPLICATION_STATUS.WITHDRAWN, APPLICATION_STATUS.SELECTED)).toBe(false);
+      expect(isValidApplicationStatusTransition(APPLICATION_STATUS.WITHDRAWN, APPLICATION_STATUS.REJECTED)).toBe(false);
+      // Even admin cannot modify candidate-withdrawn applications
+      expect(isValidApplicationStatusTransition(APPLICATION_STATUS.WITHDRAWN, APPLICATION_STATUS.SELECTED, ROLES.ADMIN)).toBe(false);
+    });
+
+    it('allows re-opening rejected candidates back to under_review', () => {
+      expect(isValidApplicationStatusTransition(APPLICATION_STATUS.REJECTED, APPLICATION_STATUS.UNDER_REVIEW)).toBe(true);
+    });
+
+    it('allows admin role override for non-withdrawn statuses', () => {
+      expect(isValidApplicationStatusTransition(APPLICATION_STATUS.APPLIED, APPLICATION_STATUS.SELECTED, ROLES.ADMIN)).toBe(true);
+    });
+  });
+
+  describe('Atomic Rate Limiting & Concurrency Safety (OWASP ASVS V3 & V13)', () => {
+    it('atomically increments rate limit key and preserves window TTL', async () => {
+      const testKey = `ratelimit:test:${Date.now()}`;
+      const res1 = await redisService.incrementRateLimit(testKey, 60);
+      expect(res1.count).toBe(1);
+      expect(res1.ttlSeconds).toBeGreaterThan(0);
+      expect(res1.ttlSeconds).toBeLessThanOrEqual(60);
+
+      const res2 = await redisService.incrementRateLimit(testKey, 60);
+      expect(res2.count).toBe(2);
+
+      const res3 = await redisService.incrementRateLimit(testKey, 60);
+      expect(res3.count).toBe(3);
+
+      await redisService.del(testKey);
+    });
+
+    it('safely handles concurrent hits without race conditions (TOCTOU prevention)', async () => {
+      const testKey = `ratelimit:concurrency:${Date.now()}`;
+      const concurrentHits = 15;
+
+      // Simulate 15 simultaneous requests hitting the limiter at the exact same instant
+      const promises = Array.from({ length: concurrentHits }, () =>
+        redisService.incrementRateLimit(testKey, 60)
+      );
+
+      const results = await Promise.all(promises);
+      const counts = results.map((r) => r.count);
+
+      // Verify all counts are unique and max count equals 15 without lost updates
+      const uniqueCounts = new Set(counts);
+      expect(uniqueCounts.size).toBe(concurrentHits);
+      expect(Math.max(...counts)).toBe(concurrentHits);
+
+      await redisService.del(testKey);
+    });
+  });
+
+  describe('CORS Hardening & Trusted Origins Validation (OWASP ASVS V14 - Section 14)', () => {
+    it('normalizes origins by stripping trailing slashes and whitespace', () => {
+      expect(normalizeOrigin('http://localhost:5173/')).toBe('http://localhost:5173');
+      expect(normalizeOrigin('  https://jobconnect.dev///  ')).toBe('https://jobconnect.dev');
+    });
+
+    it('permits authorized origins in development/test', () => {
+      let allowed = false;
+      validateCorsOrigin('http://localhost:5173', (err, allow) => {
+        expect(err).toBeNull();
+        allowed = Boolean(allow);
+      });
+      expect(allowed).toBe(true);
+    });
+
+    it('allows requests with missing or undefined origin (curl, server-to-server, health check)', () => {
+      let allowed = false;
+      validateCorsOrigin(undefined, (err, allow) => {
+        expect(err).toBeNull();
+        allowed = Boolean(allow);
+      });
+      expect(allowed).toBe(true);
+    });
+
+    it('strictly rejects "null" origin to prevent sandboxed iframe attacks', () => {
+      let rejectedError: Error | null = null;
+      validateCorsOrigin('null', (err) => {
+        rejectedError = err;
+      });
+      expect(rejectedError).not.toBeNull();
+      expect((rejectedError as unknown as Error)?.message).toContain('"null" origin is not permitted');
+    });
+
+    it('strictly rejects malicious untrusted origins', () => {
+      let rejectedError: Error | null = null;
+      validateCorsOrigin('http://malicious-attacker.com', (err) => {
+        rejectedError = err;
+      });
+      expect(rejectedError).not.toBeNull();
+      expect((rejectedError as unknown as Error)?.message).toContain('is not authorized');
+    });
+
+    it('strictly excludes localhost dev origins when NODE_ENV is production (Issue 11)', () => {
+      const originalNodeEnv = env.NODE_ENV;
+      const originalFrontendUrl = env.FRONTEND_URL;
+      try {
+        (env as any).NODE_ENV = 'production';
+        (env as any).FRONTEND_URL = 'https://jobconnect.dev';
+        const productionOrigins = getAllowedOrigins();
+        expect(productionOrigins).toEqual(['https://jobconnect.dev']);
+        expect(productionOrigins).not.toContain('http://localhost:5173');
+        expect(productionOrigins).not.toContain('http://127.0.0.1:5173');
+        expect(productionOrigins).not.toContain('http://localhost:3000');
+      } finally {
+        (env as any).NODE_ENV = originalNodeEnv;
+        (env as any).FRONTEND_URL = originalFrontendUrl;
+      }
+    });
+  });
+
+  describe('OTP Security, Storage & Attempt Lockout (Section 6A.39)', () => {
+    const testEmail = `test.user.${Date.now()}@example.com`;
+    const otp = '849201';
+
+    it('stores OTP in hashed format and sets 60-second cooldown', async () => {
+      const result = await storeOtpInRedis('email_verification', testEmail, otp);
+      expect(result.success).toBe(true);
+
+      // Immediate second request must trigger cooldown
+      const cooldownAttempt = await storeOtpInRedis('email_verification', testEmail, otp);
+      expect(cooldownAttempt.success).toBe(false);
+      expect(cooldownAttempt.cooldownRemaining).toBeGreaterThan(0);
+      expect(cooldownAttempt.cooldownRemaining).toBeLessThanOrEqual(60);
+    });
+
+    it('atomically tracks failed attempts and locks after 5 invalid tries', async () => {
+      // First 4 invalid tries
+      for (let i = 1; i <= 4; i++) {
+        const verifyRes = await verifyOtpFromRedis('email_verification', testEmail, '000000');
+        expect(verifyRes.valid).toBe(false);
+        expect(verifyRes.reason).toContain('attempts remaining');
+      }
+
+      // 5th attempt reaches max
+      const fifthAttempt = await verifyOtpFromRedis('email_verification', testEmail, '000000');
+      expect(fifthAttempt.valid).toBe(false);
+
+      // 6th attempt must be locked out completely
+      const lockedAttempt = await verifyOtpFromRedis('email_verification', testEmail, '000000');
+      expect(lockedAttempt.valid).toBe(false);
+      expect(lockedAttempt.reason).toContain('Maximum verification attempts exceeded');
     });
   });
 });

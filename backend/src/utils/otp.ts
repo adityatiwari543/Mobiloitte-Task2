@@ -19,7 +19,8 @@ export async function storeOtpInRedis(
   const cooldownKey = `otp:cooldown:${purpose}:${identifier}`;
   const isCooldown = await redisService.exists(cooldownKey);
   if (isCooldown) {
-    return { success: false, cooldownRemaining: 60 };
+    const remainingTtl = await redisService.ttl(cooldownKey);
+    return { success: false, cooldownRemaining: remainingTtl > 0 ? remainingTtl : VALIDATION_LIMITS.OTP_COOLDOWN_SECONDS };
   }
 
   const hashed = hashOtp(otp);
@@ -33,7 +34,7 @@ export async function storeOtpInRedis(
   await redisService.set(cooldownKey, '1', VALIDATION_LIMITS.OTP_COOLDOWN_SECONDS);
 
   // Reset attempts
-  await redisService.set(attemptsKey, '0', VALIDATION_LIMITS.OTP_TTL_SECONDS);
+  await redisService.del(attemptsKey);
 
   return { success: true };
 }
@@ -51,10 +52,15 @@ export async function verifyOtpFromRedis(
     return { valid: false, reason: 'OTP has expired or does not exist. Please request a new one.' };
   }
 
-  // Check attempt limit (Section 6A.39)
-  const currentAttempts = parseInt((await redisService.get(attemptsKey)) || '0', 10);
-  if (currentAttempts >= VALIDATION_LIMITS.OTP_MAX_ATTEMPTS) {
+  // Atomic attempt limit increment (OWASP ASVS V3 & V13 / Section 6A.39)
+  const attempts = await redisService.incr(attemptsKey);
+  if (attempts === 1) {
+    await redisService.expire(attemptsKey, VALIDATION_LIMITS.OTP_TTL_SECONDS);
+  }
+
+  if (attempts > VALIDATION_LIMITS.OTP_MAX_ATTEMPTS) {
     await redisService.del(otpKey);
+    await redisService.del(attemptsKey);
     return {
       valid: false,
       reason: 'Maximum verification attempts exceeded. Please request a new OTP.',
@@ -63,10 +69,9 @@ export async function verifyOtpFromRedis(
 
   const candidateHash = hashOtp(candidateOtp);
   if (candidateHash !== storedHashedOtp) {
-    await redisService.set(attemptsKey, (currentAttempts + 1).toString(), VALIDATION_LIMITS.OTP_TTL_SECONDS);
     return {
       valid: false,
-      reason: `Invalid OTP. You have ${VALIDATION_LIMITS.OTP_MAX_ATTEMPTS - (currentAttempts + 1)} attempts remaining.`,
+      reason: `Invalid OTP. You have ${Math.max(0, VALIDATION_LIMITS.OTP_MAX_ATTEMPTS - attempts)} attempts remaining.`,
     };
   }
 

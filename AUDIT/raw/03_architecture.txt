@@ -1,0 +1,53 @@
+# Architecture & Layering Analysis
+
+## Circular Dependencies Detected: 0
+No circular dependencies detected among imported modules.
+
+## Layer Violations Detected: 2
+- [backend/src/services/auth.service.ts] Service imports Express Request/Response types (Services should be decoupled from HTTP transport layer)
+- [backend/src/services/session.service.ts] Service imports Express Request/Response types (Services should be decoupled from HTTP transport layer)
+
+## Functions Over 80 Lines: 13
+| Rank | File:Line | Function | Length (LOC) |
+|---|---|---|---|
+| 1 | backend/src/scripts/seed50Jobs.ts:17 | `seed50Jobs` | 886 |
+| 2 | shared/src/schemas/auth.schema.ts:109 | `checkCountryStartingDigits` | 392 |
+| 3 | backend/src/scripts/seed.ts:10 | `seedDatabase` | 276 |
+| 4 | backend/src/services/job.service.ts:20 | `listJobs` | 190 |
+| 5 | backend/src/services/auth.service.ts:39 | `register` | 131 |
+| 6 | shared/src/schemas/auth.schema.ts:513 | `getPhoneValidationState` | 128 |
+| 7 | backend/src/services/application.service.ts:305 | `updateStatus` | 112 |
+| 8 | backend/src/services/application.service.ts:80 | `applyJob` | 109 |
+| 9 | backend/src/services/auth.service.ts:289 | `login` | 98 |
+| 10 | frontend/src/pages/CandidateAIAssistantPage.tsx:1070 | `handleSendPrompt` | 96 |
+| 11 | backend/src/services/admin.service.ts:12 | `getDashboard` | 92 |
+| 12 | backend/src/services/auth.service.ts:569 | `resetPassword` | 88 |
+| 13 | backend/src/services/application.service.ts:419 | `scheduleInterview` | 81 |
+
+## Top 20 Cyclomatic Complexity Functions:
+| Rank | File:Line | Function | Cyclomatic Complexity | Length |
+|---|---|---|---|---|
+| 1 | shared/src/schemas/auth.schema.ts:109 | `checkCountryStartingDigits` | 113 | 392 |
+| 2 | backend/src/services/candidate.service.ts:48 | `updateProfile` | 32 | 80 |
+| 3 | backend/src/services/job.service.ts:20 | `listJobs` | 26 | 190 |
+| 4 | backend/src/scripts/seed50Jobs.ts:17 | `seed50Jobs` | 23 | 886 |
+| 5 | backend/src/services/recruiter.service.ts:61 | `updateProfile` | 18 | 72 |
+| 6 | backend/src/services/application.service.ts:80 | `applyJob` | 17 | 109 |
+| 7 | backend/src/services/job.service.ts:285 | `updateJob` | 15 | 40 |
+| 8 | backend/src/scripts/seed.ts:10 | `seedDatabase` | 14 | 276 |
+| 9 | frontend/src/pages/CandidateAIAssistantPage.tsx:1070 | `handleSendPrompt` | 14 | 96 |
+| 10 | shared/src/schemas/auth.schema.ts:33 | `validateEmailSecurity` | 14 | 58 |
+| 11 | backend/src/services/auth.service.ts:39 | `register` | 12 | 131 |
+| 12 | backend/src/services/company.service.ts:53 | `updateCompany` | 11 | 36 |
+| 13 | backend/src/services/session.service.ts:8 | `parseUserAgent` | 11 | 25 |
+| 14 | frontend/src/pages/RegisterPage.tsx:222 | `getErrorMessage` | 11 | 33 |
+| 15 | shared/src/schemas/auth.schema.ts:513 | `getPhoneValidationState` | 11 | 128 |
+| 16 | backend/src/services/application.service.ts:305 | `updateStatus` | 10 | 112 |
+| 17 | backend/src/services/application.service.ts:419 | `scheduleInterview` | 10 | 81 |
+| 18 | frontend/src/pages/LoginPage.tsx:47 | `onSubmit` | 10 | 44 |
+| 19 | frontend/src/pages/RecruiterJobCreatePage.tsx:229 | `handleJobSubmit` | 10 | 72 |
+
+## Code Duplication:
+- Total lines evaluated: 29715
+- Estimated duplication percentage: 5.89%
+- Top duplicated blocks count: 162

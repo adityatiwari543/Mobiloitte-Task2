@@ -60,12 +60,16 @@ export class AIController {
 
   static async chat(req: Request, res: Response): Promise<void> {
     try {
-      const { query } = req.body;
+      const { query, history } = req.body;
       if (!query || typeof query !== 'string' || !query.trim()) {
         sendError(res, ERROR_CODES.VALIDATION_ERROR, 'Query text is required.', 400);
         return;
       }
-      const data = await aiService.askCareerAssistant(query, req.user?.userId);
+      const data = await aiService.askCareerAssistant(
+        query,
+        req.user?.userId,
+        Array.isArray(history) ? history : undefined
+      );
       sendSuccess(res, data, 'Response generated.');
     } catch (err: unknown) {
       const error = err as { statusCode?: number; message?: string };

@@ -19,29 +19,23 @@ export function createRateLimiter(options: {
 
     const rateLimitKey = `ratelimit:${prefix}:${clientKey}`;
 
-    const currentCountStr = await redisService.get(rateLimitKey);
-    const currentCount = currentCountStr ? parseInt(currentCountStr, 10) : 0;
+    // Atomic INCR + EXPIRE (OWASP ASVS V3 & V13 Concurrency Safe)
+    const { count, ttlSeconds } = await redisService.incrementRateLimit(rateLimitKey, windowSeconds);
 
-    if (currentCount >= maxRequests) {
-      res.setHeader('Retry-After', windowSeconds);
+    res.setHeader('X-RateLimit-Limit', maxRequests);
+    res.setHeader('X-RateLimit-Remaining', Math.max(0, maxRequests - count));
+
+    if (count > maxRequests) {
+      res.setHeader('Retry-After', ttlSeconds);
       sendError(
         res,
         ERROR_CODES.RATE_LIMIT_EXCEEDED,
         'Too many requests. Please slow down and try again later.',
         429,
-        { retryAfterSeconds: windowSeconds }
+        { retryAfterSeconds: ttlSeconds }
       );
       return;
     }
-
-    if (currentCount === 0) {
-      await redisService.set(rateLimitKey, '1', windowSeconds);
-    } else {
-      await redisService.set(rateLimitKey, (currentCount + 1).toString(), windowSeconds);
-    }
-
-    res.setHeader('X-RateLimit-Limit', maxRequests);
-    res.setHeader('X-RateLimit-Remaining', Math.max(0, maxRequests - (currentCount + 1)));
 
     next();
   };

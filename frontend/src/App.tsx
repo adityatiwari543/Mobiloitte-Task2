@@ -34,6 +34,8 @@ import { AdminUsersPage } from './pages/AdminUsersPage.js';
 import { AdminJobsPage } from './pages/AdminJobsPage.js';
 import { AdminAuditLogsPage } from './pages/AdminAuditLogsPage.js';
 import { AdminProfilePage } from './pages/AdminProfilePage.js';
+import { AdminApplicationsPage } from './pages/AdminApplicationsPage.js';
+import { AdminLayout } from './components/admin/layout/AdminLayout.js';
 
 import { ROLES, UserRole } from '@jobconnect/shared';
 
@@ -172,52 +174,28 @@ export const App: React.FC = () => {
                   }
                 />
 
-                {/* Admin routes */}
-                <Route path="admin" element={<Navigate to="/admin/dashboard" replace />} />
-                <Route
-                  path="admin/dashboard"
-                  element={
-                    <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
-                      <AdminDashboardPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="admin/users"
-                  element={
-                    <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
-                      <AdminUsersPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="admin/jobs"
-                  element={
-                    <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
-                      <AdminJobsPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="admin/audit-logs"
-                  element={
-                    <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
-                      <AdminAuditLogsPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="admin/profile"
-                  element={
-                    <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
-                      <AdminProfilePage />
-                    </ProtectedRoute>
-                  }
-                />
-
-                {/* Fallback */}
-                <Route path="*" element={<Navigate to="/" replace />} />
               </Route>
+
+              {/* Dedicated Admin Portal Layout */}
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
+                    <AdminLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Navigate to="/admin/dashboard" replace />} />
+                <Route path="dashboard" element={<AdminDashboardPage />} />
+                <Route path="users" element={<AdminUsersPage />} />
+                <Route path="jobs" element={<AdminJobsPage />} />
+                <Route path="applications" element={<AdminApplicationsPage />} />
+                <Route path="audit-logs" element={<AdminAuditLogsPage />} />
+                <Route path="profile" element={<AdminProfilePage />} />
+              </Route>
+
+              {/* Fallback */}
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </BrowserRouter>
         </AuthProvider>

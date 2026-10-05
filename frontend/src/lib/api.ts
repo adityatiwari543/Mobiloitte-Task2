@@ -11,6 +11,7 @@ export const api = axios.create({
 
 // Helper to read cookie value
 function getCookie(name: string): string | null {
+  if (typeof document === 'undefined' || !document.cookie) return null;
   const match = document.cookie.match(new RegExp('(^|;\\s*)(' + name + ')=([^;]*)'));
   return match ? decodeURIComponent(match[3] || '') : null;
 }
@@ -47,14 +48,18 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Avoid infinite loop on auth endpoints
+    // Avoid infinite loop on auth endpoints & do not auto-refresh if session is not active
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
       !originalRequest.url?.includes('/auth/login') &&
       !originalRequest.url?.includes('/auth/refresh') &&
-      !originalRequest.url?.includes('/auth/register')
+      !originalRequest.url?.includes('/auth/register') &&
+      !originalRequest.url?.includes('/auth/logout')
     ) {
+      if (typeof window !== 'undefined' && !sessionStorage.getItem('jobconnect_session_active')) {
+        return Promise.reject(error);
+      }
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
