@@ -59,11 +59,13 @@ const JobSchema = new Schema<IJobDocument>(
       type: Number,
       min: 0,
       set: (v: number) => (v !== undefined && v !== null ? Math.round(v) : v),
+      get: (v: number) => (v !== undefined && v !== null ? Math.round(v) : v),
     },
     salaryMax: {
       type: Number,
       min: 0,
       set: (v: number) => (v !== undefined && v !== null ? Math.round(v) : v),
+      get: (v: number) => (v !== undefined && v !== null ? Math.round(v) : v),
     },
     currency: { type: String, default: 'INR' },
     status: {
@@ -78,6 +80,8 @@ const JobSchema = new Schema<IJobDocument>(
   },
   {
     timestamps: true,
+    toJSON: { getters: true },
+    toObject: { getters: true },
   }
 );
 

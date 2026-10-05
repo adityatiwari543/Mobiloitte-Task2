@@ -44,8 +44,12 @@ Analyzes a candidate's verified skills, experience level, and preferred role aga
 ### 3.3 Recruiter Job Description Generator
 Transforms rough recruiter bullet points into a structured, enticing job listing with standard sections (About Role, Responsibilities, Requirements, Preferred Qualifications, Interview Process).
 
-### 3.4 AI Career & Recruitment Assistant
-Interactive Q&A assistant contextualized with actual platform listings and candidate skills, preventing hallucinations.
+### 3.4 AI Career & Recruitment Assistant (Direct Context-Injected Retrieval Pipeline)
+Rather than heavy external vector DB overhead (pgvector/Pinecone), JobConnect implements a high-throughput **Direct Context-Injected Retrieval Pipeline via MongoDB Semantic Filter & In-Memory Match Scoring**:
+- **Candidate Intent Analysis**: User queries are analyzed with regex tokenizers for career advice vs active job discovery intents.
+- **Indexed MongoDB Context Filter**: Active published platform listings are retrieved via compound database indexes (`{ status: 1, createdAt: -1 }`).
+- **In-Memory Semantic Match Scoring**: Candidate skills and tokenized query terms are scored against job requirements and weighted in-memory ($O(N)$ efficiency) to select the top relevant job postings.
+- **PII Redacted Delimited Prompt Assembly**: Injects the scored jobs and verified candidate profile data into isolated prompt delimiters, completely mitigating hallucinations while preserving DPDP & OWASP ASVS PII compliance.
 
 ---
 

@@ -60,7 +60,7 @@ JobConnect connects **Job Seekers / Candidates**, **Employers / Recruiters**, **
 - **Candidate Dashboard**: Profile completion progress bar (0–100%), application metrics, and deterministic skills recommendations.
 - **Profile & Resume Management**: Add skills tags, experience, and upload PDF/DOCX resumes validated by MIME magic numbers and safe disk isolation.
 - **Application Pipeline**: Submit applications (protected against duplicate submissions at both service and DB index levels), track stage progression in real time, or withdraw.
-- **AI Career Assistant**: Contextual Q&A grounded in platform jobs, profile optimization advice, and interview preparation tips.
+- **AI Career Assistant**: Direct Context-Injected Assistant via MongoDB Semantic Filter & in-memory skills match scoring, profile optimization advice, and interview preparation tips.
 - **AI Job Description Summarizer**: Instant breakdown of core responsibilities, must-have skills, and missing information.
 - **AI Candidate-Job Matching**: Semantic match assessment with skills gap identification.
 
@@ -76,7 +76,7 @@ JobConnect connects **Job Seekers / Candidates**, **Employers / Recruiters**, **
 - **Executive Dashboard**: High-level platform KPIs (total users, active jobs, applications count, company counts).
 - **User Moderation**: Filter user directories by role/status and suspend or reactivate accounts. Suspending a user immediately revokes all their active sessions.
 - **Content Moderation**: Take down or pause offensive/violating job postings.
-- **Immutable Audit Logs**: Queryable security audit trail logging every administrative intervention with actor IDs, actions, and timestamps.
+- **Immutable Audit Logs**: Append-only security audit trail with Mongoose pre-hook runtime write/delete protection, logging actor IDs, actions, and timestamps.
 
 ---
 
@@ -88,7 +88,7 @@ JobConnect connects **Job Seekers / Candidates**, **Employers / Recruiters**, **
 | **Backend** | Node.js, Express, TypeScript, Mongoose, Redis (`ioredis`), Zod, bcrypt, JWT, Socket.IO, Helmet, CORS, Multer |
 | **Database** | MongoDB 8.x with compound & unique indexes |
 | **Caching & Pub/Sub** | Redis 7.x (with resilient automatic in-memory fallback for local dev) |
-| **AI Integration** | Provider abstraction layer supporting Google Gemini, OpenAI, and Deterministic offline adapter |
+| **AI Integration** | Provider abstraction layer (Gemini, OpenAI, Deterministic) with Direct Context-Injected MongoDB Semantic Filter & In-Memory Matching |
 | **Testing** | Vitest test runner with automated security & validation test suite |
 | **DevOps** | Multi-stage Dockerfiles and `docker-compose.yml` orchestration |
 

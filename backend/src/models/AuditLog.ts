@@ -37,13 +37,19 @@ AuditLogSchema.pre('save', function (next) {
   next();
 });
 
-AuditLogSchema.pre(['updateOne', 'updateMany', 'findOneAndUpdate'], function (next) {
-  next(new Error('Audit logs are tamper-proof and cannot be updated.'));
-});
+AuditLogSchema.pre(
+  ['updateOne', 'updateMany', 'findOneAndUpdate', 'replaceOne', 'findOneAndReplace'] as any,
+  function (next: any) {
+    next(new Error('Audit logs are tamper-proof and cannot be updated.'));
+  }
+);
 
-AuditLogSchema.pre(['deleteOne', 'deleteMany', 'findOneAndDelete'], function (next) {
-  next(new Error('Audit logs are tamper-proof and cannot be deleted.'));
-});
+AuditLogSchema.pre(
+  ['deleteOne', 'deleteMany', 'findOneAndDelete'] as any,
+  function (next: any) {
+    next(new Error('Audit logs are tamper-proof and cannot be deleted.'));
+  }
+);
 
 AuditLogSchema.index({ actorUserId: 1, createdAt: -1 });
 

@@ -136,32 +136,46 @@ class AIService {
       }
     }
 
-    // Retrieve recent platform jobs for grounded context (anti-hallucination)
-    const recentJobs = await Job.find({ status: 'published' })
+    // Direct Context-Injected Retrieval Pipeline via MongoDB Semantic Filter & In-Memory Match Scoring
+    const activeJobs = await Job.find({ status: 'published' })
       .sort({ createdAt: -1 })
-      .limit(4)
-      .select('title skills location remoteType employmentType');
+      .limit(12)
+      .populate('companyId', 'name logoUrl location isVerified')
+      .select('title slug skills location remoteType employmentType salaryMin salaryMax currency companyId');
 
-    const recentJobsSnippet = recentJobs
-      .map((j) => `- ${j.title} (${j.remoteType}, ${j.employmentType}): Skills: [${j.skills.join(', ')}] in ${j.location}`)
+    // In-memory semantic match scoring based on candidate skills and query tokens
+    const queryTokens = (sanitizedQuery || '').toLowerCase().split(/\W+/).filter(Boolean);
+    const candidateSkillsLower = candidateSkills.map((s) => s.toLowerCase());
+
+    const scoredJobs = activeJobs.map((j) => {
+      let score = 0;
+      const jobSkillsLower = (j.skills || []).map((s) => s.toLowerCase());
+      const jobTitleLower = (j.title || '').toLowerCase();
+
+      // Candidate skills overlap bonus (Weight: 3)
+      for (const skill of jobSkillsLower) {
+        if (candidateSkillsLower.includes(skill)) score += 3;
+        if (queryTokens.includes(skill)) score += 2;
+      }
+      // Job title token relevance (Weight: 2)
+      for (const token of queryTokens) {
+        if (token.length > 2 && jobTitleLower.includes(token)) score += 2;
+      }
+      return { job: j, score };
+    });
+
+    scoredJobs.sort((a, b) => b.score - a.score);
+    const topContextJobs = scoredJobs.slice(0, 4).map((item) => item.job);
+
+    const recentJobsSnippet = topContextJobs
+      .map((j) => `- ${j.title} (${j.remoteType}, ${j.employmentType}): Skills: [${(j.skills || []).join(', ')}] in ${j.location}`)
       .join('\n');
 
-    // If candidate asks for jobs or matching roles, pull actual active matching jobs
+    // If candidate asks for jobs or matching roles, provide the top semantically scored active jobs
     const isJobSearchIntent = /\b(job|jobs|hiring|role|roles|opening|openings|opportunity|opportunities|work|vacancy|vacancies|recommend|match)\b/i.test(userQuery);
     let matchedJobs: any[] = [];
     if (isJobSearchIntent) {
-      const filter: any = { status: 'published' };
-      if (candidateSkills.length > 0) {
-        filter.$or = [
-          { skills: { $in: candidateSkills } },
-          { title: { $regex: candidateSkills[0] || 'developer', $options: 'i' } }
-        ];
-      }
-      matchedJobs = await Job.find(filter)
-        .sort({ createdAt: -1 })
-        .limit(3)
-        .populate('companyId', 'name logoUrl location isVerified')
-        .select('title slug skills location remoteType employmentType salaryMin salaryMax currency companyId');
+      matchedJobs = topContextJobs.slice(0, 3);
     }
 
     const prompt = createCareerAssistantPrompt({

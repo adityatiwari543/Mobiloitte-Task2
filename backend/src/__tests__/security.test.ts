@@ -26,6 +26,8 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { uploadsSecurityMiddleware } from '../app.js';
+import { Job } from '../models/Job.js';
+import { AuditLog } from '../models/AuditLog.js';
 
 describe('JobConnect Security & Validation Test Suite (Section 6A & 31)', () => {
   describe('First Name Validation (Section 6A.3)', () => {
@@ -604,6 +606,91 @@ describe('JobConnect Security & Validation Test Suite (Section 6A & 31)', () => 
         uploadsSecurityMiddleware(req, res, next);
         expect(headers['content-disposition']).toBeUndefined();
       }
+    });
+  });
+
+  describe('Immutable Audit Log Tamper-Resistance (Issue 4 & OWASP ASVS V8)', () => {
+    it('blocks save operations on existing audit logs (strictly append-only)', () => {
+      const doc = new AuditLog({
+        action: 'TEST_ACTION',
+        resourceType: 'User',
+      });
+      // Simulate an existing saved document
+      (doc as any).isNew = false;
+
+      let caughtErr: any = null;
+      // Trigger the pre('save') hook function directly
+      const hooks: any = (AuditLog.schema as any).s.hooks;
+      const savePres = hooks._pres.get('save') || [];
+      for (const h of savePres) {
+        h.fn.call(doc, (err: any) => {
+          if (err) caughtErr = err;
+        });
+      }
+
+      expect(caughtErr).toBeDefined();
+      expect(caughtErr?.message).toContain('Audit logs are strictly append-only and cannot be mutated.');
+    });
+
+    it('blocks update and delete operations across all mutation hooks', () => {
+      const hooks: any = (AuditLog.schema as any).s.hooks;
+      const updateOperations = ['updateOne', 'updateMany', 'findOneAndUpdate', 'replaceOne', 'findOneAndReplace'];
+      for (const op of updateOperations) {
+        const pres = hooks._pres.get(op) || [];
+        expect(pres.length).toBeGreaterThan(0);
+        let caughtErr: any = null;
+        pres[0].fn.call({}, (err: any) => {
+          if (err) caughtErr = err;
+        });
+        expect(caughtErr?.message).toContain('Audit logs are tamper-proof and cannot be updated.');
+      }
+
+      const deleteOperations = ['deleteOne', 'deleteMany', 'findOneAndDelete'];
+      for (const op of deleteOperations) {
+        const pres = hooks._pres.get(op) || [];
+        expect(pres.length).toBeGreaterThan(0);
+        let caughtErr: any = null;
+        pres[0].fn.call({}, (err: any) => {
+          if (err) caughtErr = err;
+        });
+        expect(caughtErr?.message).toContain('Audit logs are tamper-proof and cannot be deleted.');
+      }
+    });
+  });
+
+  describe('Salary Financial Precision & IEEE-754 Prevention (Issue 5)', () => {
+    it('normalizes floating point salary values to integers via setters', () => {
+      const job = new Job({
+        title: 'Senior Full Stack Engineer',
+        description: 'Building modern scalable web portals with Node.js and React.',
+        location: 'Bengaluru',
+        remoteType: 'remote',
+        employmentType: 'full-time',
+        experienceMin: 3,
+        experienceMax: 6,
+        salaryMin: 125000.49,
+        salaryMax: 185000.89,
+        applicationDeadline: new Date(Date.now() + 86400000 * 30),
+      });
+
+      expect(job.salaryMin).toBe(125000);
+      expect(job.salaryMax).toBe(185001);
+      expect(Number.isInteger(job.salaryMin)).toBe(true);
+      expect(Number.isInteger(job.salaryMax)).toBe(true);
+    });
+
+    it('guarantees integer representation upon JSON serialization without decimal drift', () => {
+      const job = new Job({
+        title: 'Lead Architect',
+        salaryMin: 250000.2,
+        salaryMax: 350000.7,
+      });
+
+      const serialized = job.toJSON();
+      expect(serialized.salaryMin).toBe(250000);
+      expect(serialized.salaryMax).toBe(350001);
+      expect(Number.isInteger(serialized.salaryMin)).toBe(true);
+      expect(Number.isInteger(serialized.salaryMax)).toBe(true);
     });
   });
 });
