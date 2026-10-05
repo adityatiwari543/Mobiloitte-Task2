@@ -156,41 +156,21 @@ export const RecruiterProfilePage: React.FC = () => {
 
   const [firstNameWarning, setFirstNameWarning] = useState<string | null>(null);
 
-  // Recruiter Preferences States (Persisted per recruiter)
-  const prefsStorageKey = useMemo(() => `jobconnect_recruiter_prefs_${authUser?._id || 'default'}`, [authUser?._id]);
-  
-  const [preferredCategories, setPreferredCategories] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem(prefsStorageKey);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        return parsed.preferredCategories || ['Full Stack Engineering', 'Backend Development'];
-      }
-    } catch {}
-    return ['Full Stack Engineering', 'Backend Development'];
-  });
+  // Recruiter Preferences States (In-memory, zero leakage to localStorage)
+  const [preferredCategories, setPreferredCategories] = useState<string[]>([
+    'Full Stack Engineering',
+    'Backend Development',
+  ]);
 
-  const [preferredLocations, setPreferredLocations] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem(prefsStorageKey);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        return parsed.preferredLocations || ['Bengaluru, India', 'Remote (India)'];
-      }
-    } catch {}
-    return ['Bengaluru, India', 'Remote (India)'];
-  });
+  const [preferredLocations, setPreferredLocations] = useState<string[]>([
+    'Bengaluru, India',
+    'Remote (India)',
+  ]);
 
-  const [preferredWorkModes, setPreferredWorkModes] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem(prefsStorageKey);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        return parsed.preferredWorkModes || ['remote', 'hybrid'];
-      }
-    } catch {}
-    return ['remote', 'hybrid'];
-  });
+  const [preferredWorkModes, setPreferredWorkModes] = useState<string[]>([
+    'remote',
+    'hybrid',
+  ]);
 
   const [notifications, setNotifications] = useState({
     newApplications: true,
@@ -263,22 +243,6 @@ export const RecruiterProfilePage: React.FC = () => {
       }
     }
   }, [data, authUser]);
-
-  // Save preferences to localStorage whenever changed
-  useEffect(() => {
-    try {
-      localStorage.setItem(
-        prefsStorageKey,
-        JSON.stringify({
-          preferredCategories,
-          preferredLocations,
-          preferredWorkModes,
-          notifications,
-          isPublicVisible,
-        })
-      );
-    } catch {}
-  }, [preferredCategories, preferredLocations, preferredWorkModes, notifications, isPublicVisible, prefsStorageKey]);
 
   // Close country dropdown on outside click
   useEffect(() => {

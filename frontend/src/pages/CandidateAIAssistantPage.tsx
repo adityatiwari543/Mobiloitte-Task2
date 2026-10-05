@@ -791,7 +791,6 @@ export const CandidateAIAssistantPage: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const storageKey = `jobconnect_ai_coach_v3_${user?._id || 'guest'}`;
   const userName = user?.firstName || user?.name?.split(' ')[0] || 'Aditya';
 
   // Greeting based on time of day
@@ -892,45 +891,24 @@ export const CandidateAIAssistantPage: React.FC = () => {
     }
   }, [location.state]);
 
-  // Load chat sessions from localStorage or load demo sessions
+  // In-memory chat sessions management (Security: Never leak session IDs or transcripts to localStorage)
   // Start with a fresh new chat whenever candidate opens the page
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(storageKey);
-      if (raw) {
-        const parsed: ChatSession[] = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setSessions(parsed);
-          setActiveSessionId(null);
-          setMessages([]);
-          setCurrentSuggestions(DEFAULT_SUGGESTIONS);
-          return;
-        }
-      }
-    } catch (err) {
-      console.error('Failed to load chat history:', err);
-    }
-
     // Default to mock initial sessions in sidebar for reference, but start with fresh new chat
     setSessions(INITIAL_DEMO_SESSIONS);
     setActiveSessionId(null);
     setMessages([]);
     setCurrentSuggestions(DEFAULT_SUGGESTIONS);
-  }, [storageKey]);
+  }, []);
 
   // Scroll to bottom on message updates
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, aiStatus]);
 
-  // Save sessions to localStorage helper
+  // Save sessions to in-memory state (zero persistence in unencrypted browser storage)
   const persistSessions = (updatedSessions: ChatSession[]) => {
     setSessions(updatedSessions);
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(updatedSessions));
-    } catch (err) {
-      console.error('Failed to save sessions to localStorage:', err);
-    }
   };
 
   // Toggle Save Job Mutation

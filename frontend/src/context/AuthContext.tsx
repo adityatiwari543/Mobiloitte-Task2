@@ -19,10 +19,18 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Security rule: Auth tokens are managed strictly via HttpOnly secure cookies.
 // localStorage must only ever store user preferences like 'theme'.
-const purgeLegacyStorageTokens = () => {
+const enforceThemeOnlyLocalStorage = () => {
   try {
-    localStorage.removeItem('jobconnect_at');
-    localStorage.removeItem('jobconnect_rt');
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key !== 'theme') {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach((k) => localStorage.removeItem(k));
+    }
   } catch {}
 };
 
@@ -65,12 +73,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    purgeLegacyStorageTokens();
+    enforceThemeOnlyLocalStorage();
     refreshUser();
   }, []);
 
   const login = async (credentials: LoginInput) => {
-    purgeLegacyStorageTokens();
+    enforceThemeOnlyLocalStorage();
     const res = await api.post('/auth/login', credentials);
     if (res.data.success && !res.data.data.pendingVerification) {
       if (typeof window !== 'undefined') {
@@ -89,7 +97,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const verifyOtp = async (identifier: string, otp: string, purpose: string) => {
-    purgeLegacyStorageTokens();
+    enforceThemeOnlyLocalStorage();
     const res = await api.post('/auth/verify-otp', { identifier, otp, purpose });
     if (res.data.success) {
       if (typeof window !== 'undefined') {
@@ -106,7 +114,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await api.post('/auth/logout');
     } finally {
-      purgeLegacyStorageTokens();
+      enforceThemeOnlyLocalStorage();
       if (typeof window !== 'undefined') {
         sessionStorage.removeItem('jobconnect_session_active');
       }

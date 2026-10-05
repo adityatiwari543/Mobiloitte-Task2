@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../../lib/api.js';
@@ -23,32 +23,26 @@ export const AdminLayout: React.FC = () => {
 
   const totalApplications = appsData ?? 0;
   const [unseenAppsCount, setUnseenAppsCount] = useState<number>(0);
+  const lastSeenAppsRef = useRef<number | null>(null);
 
-  // Update unseen count on applications change or route change
+  // Update unseen count on applications change or route change in-memory
   useEffect(() => {
-    const saved = localStorage.getItem('jobconnect_admin_seen_apps_count');
-    if (saved === null) {
-      // First time loading - initialize with current total so it's clean (0 unseen)
-      if (totalApplications > 0) {
-        localStorage.setItem('jobconnect_admin_seen_apps_count', String(totalApplications));
-      }
+    if (lastSeenAppsRef.current === null) {
+      lastSeenAppsRef.current = totalApplications;
+      setUnseenAppsCount(0);
+    } else if (location.pathname === '/admin/applications') {
+      lastSeenAppsRef.current = totalApplications;
       setUnseenAppsCount(0);
     } else {
-      const lastSeen = parseInt(saved, 10);
-      if (location.pathname === '/admin/applications') {
-        localStorage.setItem('jobconnect_admin_seen_apps_count', String(totalApplications));
-        setUnseenAppsCount(0);
-      } else {
-        const diff = Math.max(0, totalApplications - lastSeen);
-        setUnseenAppsCount(diff);
-      }
+      const diff = Math.max(0, totalApplications - lastSeenAppsRef.current);
+      setUnseenAppsCount(diff);
     }
   }, [totalApplications, location.pathname]);
 
   // When admin navigates to /admin/applications, clear badge immediately
   useEffect(() => {
     if (location.pathname === '/admin/applications' && totalApplications >= 0) {
-      localStorage.setItem('jobconnect_admin_seen_apps_count', String(totalApplications));
+      lastSeenAppsRef.current = totalApplications;
       setUnseenAppsCount(0);
     }
   }, [location.pathname, totalApplications]);

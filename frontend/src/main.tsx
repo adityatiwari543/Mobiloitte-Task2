@@ -3,10 +3,19 @@ import ReactDOM from 'react-dom/client';
 import { App } from './App.js';
 import './index.css';
 
-// Security: Clean up any legacy auth tokens from localStorage so only 'theme' is stored
+// Security Policy: Strictly enforce that ONLY 'theme' is permitted in localStorage.
+// Automatically purge all sensitive keys (AI chat sessions, IDs, tokens, preferences) to prevent credential/data leakage.
 try {
-  localStorage.removeItem('jobconnect_at');
-  localStorage.removeItem('jobconnect_rt');
+  if (typeof window !== 'undefined' && window.localStorage) {
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key !== 'theme') {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach((k) => localStorage.removeItem(k));
+  }
 } catch {}
 
 // Global Date Picker Opener: Clicking anywhere on any date or datetime-local input triggers the native calendar picker
