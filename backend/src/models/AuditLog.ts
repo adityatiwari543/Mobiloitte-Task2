@@ -29,6 +29,22 @@ const AuditLogSchema = new Schema<IAuditLogDocument>(
   }
 );
 
+// Immutability Guards (OWASP ASVS V8 & Section 79: Tamper-Resistant Append-Only Logs)
+AuditLogSchema.pre('save', function (next) {
+  if (!this.isNew) {
+    return next(new Error('Audit logs are strictly append-only and cannot be mutated.'));
+  }
+  next();
+});
+
+AuditLogSchema.pre(['updateOne', 'updateMany', 'findOneAndUpdate'], function (next) {
+  next(new Error('Audit logs are tamper-proof and cannot be updated.'));
+});
+
+AuditLogSchema.pre(['deleteOne', 'deleteMany', 'findOneAndDelete'], function (next) {
+  next(new Error('Audit logs are tamper-proof and cannot be deleted.'));
+});
+
 AuditLogSchema.index({ actorUserId: 1, createdAt: -1 });
 
 export const AuditLog: Model<IAuditLogDocument> =

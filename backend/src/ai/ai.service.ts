@@ -109,6 +109,11 @@ class AIService {
     candidateUserId?: string,
     history?: Array<{ sender: string; text: string }>
   ) {
+    // PII Redaction Guardrail (DPDP Act & OWASP ASVS V8)
+    const sanitizedQuery = (userQuery || '')
+      .replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '[REDACTED_EMAIL]')
+      .replace(/\b(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b/g, '[REDACTED_PHONE]');
+
     let candidateSkills: string[] = [];
     let candidateName = '';
     let candidateHeadline = '';
@@ -160,7 +165,7 @@ class AIService {
     }
 
     const prompt = createCareerAssistantPrompt({
-      userQuery,
+      userQuery: sanitizedQuery,
       candidateName,
       userSkills: candidateSkills,
       candidateHeadline,

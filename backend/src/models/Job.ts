@@ -55,8 +55,16 @@ const JobSchema = new Schema<IJobDocument>(
     },
     experienceMin: { type: Number, required: true, min: 0 },
     experienceMax: { type: Number, required: true, min: 0 },
-    salaryMin: { type: Number },
-    salaryMax: { type: Number },
+    salaryMin: {
+      type: Number,
+      min: 0,
+      set: (v: number) => (v !== undefined && v !== null ? Math.round(v) : v),
+    },
+    salaryMax: {
+      type: Number,
+      min: 0,
+      set: (v: number) => (v !== undefined && v !== null ? Math.round(v) : v),
+    },
     currency: { type: String, default: 'INR' },
     status: {
       type: String,
